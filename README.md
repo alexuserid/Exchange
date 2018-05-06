@@ -1,4 +1,4 @@
-Exchange with opportunities:
+Exchange with features:
 - registration
 - login
 - trading

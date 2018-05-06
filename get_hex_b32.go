@@ -9,9 +9,12 @@ type b32 [32]byte
 
 func getToken(length int) ([]byte, error) {
 	token := make([]byte, length)
-	_, err := rand.Read(token)
+	n, err := rand.Read(token)
 	if err != nil {
 		return nil, err
+	}
+	if n != length {
+		return nil, errors.New("Mismathed length.")
 	}
 	return token, nil
 }

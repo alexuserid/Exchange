@@ -15,12 +15,12 @@ func templateParseAndExecute(file string, w http.ResponseWriter) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	templateParseAndExecute("index.html", w)
+	templateParseAndExecute("html/index.html", w)
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		templateParseAndExecute("reg.html", w)
+		templateParseAndExecute("html/reg.html", w)
 	}
 	if r.Method == "POST" {
 		err := r.ParseForm
@@ -36,7 +36,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		templateParseAndExecute("login.html", w)
+		templateParseAndExecute("html/login.html", w)
 	}
 	if r.Method == "POST" {
 		err := r.ParseForm
