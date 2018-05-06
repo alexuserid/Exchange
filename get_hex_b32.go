@@ -14,7 +14,7 @@ func getToken(length int) ([]byte, error) {
 		return nil, err
 	}
 	if n != length {
-		return nil, errors.New("Mismathed length.")
+		return nil, errors.New("Mismatched length.")
 	}
 	return token, nil
 }
