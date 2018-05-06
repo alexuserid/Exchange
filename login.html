@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<script>
+			function valid() {
+				var m = document.forms["login"]["email"].value;
+				var p = document.forms["login"]["password"].value;
+				if (m.length == 0 || p.length == 0){
+					return false;
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<form name="login" onsubmit="return valid()" method="POST">
+			Email: <input type="text" name="email">
+			Password: <input type="password" name="password">
+			<input type="submit" value="Login">
+		</form>
+	</body>
+</html>

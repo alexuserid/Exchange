@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<script>
+			function valid() {
+				var m = document.forms["reg"]["email"].value;
+				var p = document.forms["reg"]["password"].value;
+				var pr = document.forms["reg"]["passwordr"].value;
+				if (m.length == 0 || p.length == 0 || pr.length == 0){
+					return false;
+				}
+			}
+		</script>
+
+	</head>
+	<body>
+		<form name="reg" onsumbit="return valid()" method="POST">
+			Email: <input type="text" name="email">
+			Password: <input type="password" name="password">
+			Password repeat: <input type="password" name="passwordr">
+			<input type="submit" value="Registration">
+		</form>
+	</body>
+</html>
+
