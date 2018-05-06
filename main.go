@@ -53,14 +53,19 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{Name: "sessionid", MaxAge: 0})
+}
+
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Trade page will be here soon"))
+	templateParseAndExecute("html/trade.html", w)
 }
 
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/reg", regHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/trade", tradeHandler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
