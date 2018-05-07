@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,29 +16,35 @@ var (
 	mapSidUid = make(map[b32]session)
 )
 
+func checker(em, pass string) (b32, bool) {
+	uid, ok := mapEmailUid[em]
+	if !ok {
+		return b32{0}, false
+	}
+	err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass))
+	if err != nil {
+		return b32{0}, false
+	}
+	return uid, true
+}
+
 func newSid(email []string, password []string, w http.ResponseWriter) (string, error) {
-	emj := strings.Join(email, "")
-	pasj := strings.Join(password, "")
+	em := strings.Join(email, "")
+	pass := strings.Join(password, "")
 
 	mutex := &sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	uid, ok := mapEmailUid[emj]
+	uid, ok := checker(em, pass)
 	if !ok {
-		http.Error(w, "Wrong email.", http.StatusBadRequest)
-		return "", errors.New("Existing email")
+		http.Error(w, "Wrong email or password.", http.StatusBadRequest)
 	}
-	err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pasj))
-	if err != nil {
-		http.Error(w, "Wrong password", http.StatusBadRequest)
-		return "", errors.New("Wrong password.")
-	}
+
 	sid, err := getUniqueId(markerSid, w)
 	if err != nil {
 		return "", err
 	}
-
 	mapSidUid[sid] = session{uid: uid}
 
 	uidBytes := make([]byte, len(uid))
