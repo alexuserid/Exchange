@@ -23,7 +23,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		templateParseAndExecute("html/reg.html", w)
 	}
 	if r.Method == "POST" {
-		err := r.ParseForm
+		err := r.ParseForm()
 		if err != nil {
 			log.Printf("reg: r.ParseForm: %v", err)
 		}
@@ -39,7 +39,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		templateParseAndExecute("html/login.html", w)
 	}
 	if r.Method == "POST" {
-		err := r.ParseForm
+		err := r.ParseForm()
 		if err != nil {
 			log.Printf("login: r.ParseForm: %v", err)
 		}

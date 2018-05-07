@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -39,6 +40,7 @@ func newSid(email []string, password []string, w http.ResponseWriter) (string, e
 	uid, ok := checker(em, pass)
 	if !ok {
 		http.Error(w, "Wrong email or password.", http.StatusBadRequest)
+		return "", errors.New("Wrong email or password")
 	}
 
 	sid, err := getUniqueId(markerSid, w)
