@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -48,10 +49,11 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	mutex := &sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	
+
 	_, ok := mapEmailUid[emj]
 	if ok {
 		http.Error(w, "The email is already exist.", http.StatusBadRequest)
+		return errors.New("Existing email")
 	}
 
 	uid, err := getUniqueId(markerUid, w)

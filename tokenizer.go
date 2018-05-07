@@ -46,8 +46,10 @@ func getUniqueId(marker int, w http.ResponseWriter) (b32, error) {
 		id := hexMakerb32(randoms)
 		var ok bool
 		switch marker {
-		case 1: _, ok = mapUidUser[id]
-		case 2: _, ok = mapSidUid[id]
+		case 1:
+			_, ok = mapUidUser[id]
+		case 2:
+			_, ok = mapSidUid[id]
 		}
 		if !ok {
 			return id, nil
