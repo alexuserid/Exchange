@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -39,6 +38,7 @@ var (
 func newUser(email []string, password []string, w http.ResponseWriter) error {
 	emj := strings.Join(email, "")
 	pass := []byte(strings.Join(password, ""))
+
 	bytePass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Internal server error. Can't generate hash from password. Please, contact support.", http.StatusInternalServerError)
@@ -48,10 +48,10 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	mutex := &sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
+	
 	_, ok := mapEmailUid[emj]
 	if ok {
 		http.Error(w, "The email is already exist.", http.StatusBadRequest)
-		return errors.New("Existing email")
 	}
 
 	uid, err := getUniqueId(markerUid, w)
