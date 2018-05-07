@@ -36,25 +36,6 @@ var (
 	mapUidUser  = make(map[b32]user)
 )
 
-func getUniqueUserId(w http.ResponseWriter) (b32, error) {
-	for i := 0; ; i++ {
-		token, err := getToken(32)
-		if err != nil {
-			http.Error(w, "Internal server error. Can't create a new token.Please, contact support.", http.StatusInternalServerError)
-			return b32{0}, err
-		}
-		id := hexMakerb32(token)
-		_, ok := mapUidUser[id]
-		if !ok {
-			return id, nil
-		}
-		if i >= 100 {
-			http.Error(w, "There is no free tokens. Please, try again, or contact support.", http.StatusInternalServerError)
-			return b32{0}, errors.New("No free tokens")
-		}
-	}
-}
-
 func newUser(email []string, password []string, w http.ResponseWriter) error {
 	emj := strings.Join(email, "")
 	pass := []byte(strings.Join(password, ""))
@@ -73,7 +54,7 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 		return errors.New("Existing email")
 	}
 
-	uid, err := getUniqueUserId(w)
+	uid, err := getUniqueId(markerUid, w)
 	if err != nil {
 		return err
 	}
