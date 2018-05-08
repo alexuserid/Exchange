@@ -5,10 +5,24 @@ import (
 	"net/http"
 )
 
+func sidChecker(r *http.Request) bool {
+	_, err := r.Cookie("sid")
+	if err != nil {
+		return true
+	}
+	return false
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+	if sidChecker(r) {
+		http.Redirect(w, r, "/trade", http.StatusSeeOther)
+	}
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
+	if sidChecker(r) {
+		http.Redirect(w, r, "/trade", http.StatusSeeOther)
+	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
@@ -22,6 +36,9 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+	if sidChecker(r) {
+		http.Redirect(w, r, "/trade", http.StatusSeeOther)
+	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
@@ -31,17 +48,20 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		if errf != nil {
 			log.Printf("login: newSid: %v", errf)
 		}
-
-		cookieLogin := http.Cookie{Name: "sessionid", Value: sid, Path: "/", MaxAge: 86400}
+		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}
 		http.SetCookie(w, &cookieLogin)
 	}
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{Name: "sessionid", MaxAge: 0})
+	http.SetCookie(w, &http.Cookie{Name: "sid", MaxAge: 0})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
+	if !sidChecker(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	}
 }
 
 func main() {
