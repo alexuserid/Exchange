@@ -6,22 +6,10 @@ import (
 	"text/template"
 )
 
-func templateParseAndExecute(file string, w http.ResponseWriter) {
-	t, err := template.ParseFiles(file)
-	if err != nil {
-		log.Printf("template.ParseFiles: %v", err)
-	}
-	t.Execute(w, nil)
-}
-
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	templateParseAndExecute("html/index.html", w)
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		templateParseAndExecute("html/reg.html", w)
-	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
