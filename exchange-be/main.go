@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"text/template"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,9 +22,6 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		templateParseAndExecute("html/login.html", w)
-	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
@@ -46,7 +42,6 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
-	templateParseAndExecute("html/trade.html", w)
 }
 
 func main() {
