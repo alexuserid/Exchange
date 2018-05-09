@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"sync"
@@ -39,17 +40,16 @@ func newSid(email []string, password []string, w http.ResponseWriter) (string, e
 
 	uid, ok := checker(em, pass)
 	if !ok {
-		http.Error(w, "Wrong email or password.", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsons{err: "Wrong email or password."})
 		return "", errors.New("Wrong email or password")
 	}
 
-	sid, err := getUniqueId(markerSid, w)
+	sid, err := getUniqueId(w, markerSid)
 	if err != nil {
 		return "", err
 	}
 	mapSidUid[sid] = session{uid: uid}
 
-	uidBytes := make([]byte, len(uid))
-	copy(uidBytes, uid[:])
-	return string(uidBytes), nil
+	return b32ToString(uid), nil
 }
