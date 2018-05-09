@@ -1,28 +1,15 @@
 package main
 
 import (
+//	"encoding/json"
 	"log"
 	"net/http"
 )
 
-func sidChecker(r *http.Request) bool {
-	_, err := r.Cookie("sid")
-	if err != nil {
-		return true
-	}
-	return false
-}
-
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if sidChecker(r) {
-		http.Redirect(w, r, "/trade", http.StatusSeeOther)
-	}
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
-	if sidChecker(r) {
-		http.Redirect(w, r, "/trade", http.StatusSeeOther)
-	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
@@ -36,9 +23,6 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	if sidChecker(r) {
-		http.Redirect(w, r, "/trade", http.StatusSeeOther)
-	}
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
@@ -47,6 +31,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		sid, errf := newSid(r.Form["email"], r.Form["password"], w)
 		if errf != nil {
 			log.Printf("login: newSid: %v", errf)
+			return
 		}
 		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}
 		http.SetCookie(w, &cookieLogin)
@@ -55,12 +40,35 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "sid", MaxAge: 0})
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
-	if !sidChecker(r) {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func dwHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sid")
+	if err != nil {
+		log.Printf("dw: r.Cookie: %v", err)
+		return
+	}
+	log.Println(stringToB32(cookie.Value))
+	uid := mapSidUid[stringToB32(cookie.Value)]
+	log.Println(uid) //why does it print an array of zeros?
+//	userInfo := mapUidUser[mapSidUid[stringToB32(cv)]]
+
+	if r.Method == "GET" {
+//		err := json.NewEncoder(w).Encode(userInfo.wallet)
+//		if err != nil {
+//			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
+//		}
+	}
+
+	if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			log.Printf("de: r.ParseForm: %v", err)
+		}
+		//think about how to identify which currency will be increased/decreased by recieved amount
 	}
 }
 
@@ -70,6 +78,7 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/trade", tradeHandler)
+	http.HandleFunc("/dw", dwHandler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("http.ListenAndServe: %v", err)
