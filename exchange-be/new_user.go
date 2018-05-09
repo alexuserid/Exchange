@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -31,18 +32,23 @@ type deals struct {
 	price     float64
 }
 
+type jsons struct {
+	err string
+}
+
 var (
 	mapEmailUid = make(map[string]b32)
 	mapUidUser  = make(map[b32]user)
 )
 
 func newUser(email []string, password []string, w http.ResponseWriter) error {
-	emj := strings.Join(email, "")
+	em := strings.Join(email, "")
 	pass := []byte(strings.Join(password, ""))
 
-	bytePass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	cryptedPass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Internal server error. Can't generate hash from password. Please, contact support.", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(jsons{err: "Internal server error. Can't generate hash from password. Please, contact support."})
 		return err
 	}
 
@@ -50,18 +56,19 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	_, ok := mapEmailUid[emj]
+	_, ok := mapEmailUid[em]
 	if ok {
-		http.Error(w, "The email is already exist.", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(jsons{err: "The email is already exist."})
 		return errors.New("Existing email")
 	}
 
-	uid, err := getUniqueId(markerUid, w)
+	uid, err := getUniqueId(w, markerUid)
 	if err != nil {
 		return err
 	}
 
-	mapEmailUid[emj] = uid
-	mapUidUser[uid] = user{email: emj, password: bytePass}
+	mapEmailUid[em] = uid
+	mapUidUser[uid] = user{email: em, password: cryptedPass}
 	return nil
 }
