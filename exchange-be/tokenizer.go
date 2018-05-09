@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"encoding/hex"
 	"errors"
 	"net/http"
@@ -35,11 +36,12 @@ func hexMakerb32(b []byte) b32 {
 	return result
 }
 
-func getUniqueId(marker int, w http.ResponseWriter) (b32, error) {
+func getUniqueId(w http.ResponseWriter, marker int) (b32, error) {
 	for i := 0; ; i++ {
 		randoms, err := getRandoms(32)
 		if err != nil {
-			http.Error(w, "Internal server error. Can't create a new token.Please, contact support.", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(jsons{err: "Internal server error. Can't create a new token.Please, contact support."})
 			return b32{0}, err
 		}
 
@@ -56,8 +58,21 @@ func getUniqueId(marker int, w http.ResponseWriter) (b32, error) {
 		}
 
 		if i >= 100 {
-			http.Error(w, "There is no free tokens. Please, try again, or contact support.", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(jsons{err: "There is no free tokens. Please, try again, or contact support."})
 			return b32{0}, errors.New("No free tokens.")
 		}
 	}
+}
+
+func stringToB32(s string) b32 {
+	var token b32
+	copy(token[:], []byte(s))
+	return token
+}
+
+func b32ToString(token b32) string {
+	tokenBytes := make([]byte, len(token))
+	copy(tokenBytes, token[:])
+	return string(tokenBytes)
 }
