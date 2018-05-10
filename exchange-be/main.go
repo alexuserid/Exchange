@@ -1,13 +1,10 @@
 package main
 
 import (
-//	"encoding/json"
+	"encoding/json"
 	"log"
 	"net/http"
 )
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-}
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
@@ -42,25 +39,34 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "sid", MaxAge: 0})
 }
 
+func getUserInfo(r *http.Request) (user, error) {
+	cookie, err := r.Cookie("sid")
+	if err != nil {
+		return user{}, err
+	}
+	uid := mapSidUid[stringToB32(cookie.Value)]
+	return mapUidUser[uid.id], nil
+}
+
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := getUserInfo(r)
+	if err != nil {
+		log.Printf("trade: getUserInfo: %v", err)
+	}
+	log.Println(userInfo)
 }
 
 func dwHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("sid")
+	userInfo, err := getUserInfo(r)
 	if err != nil {
-		log.Printf("dw: r.Cookie: %v", err)
-		return
+		log.Printf("dw: getUserInfo: %v", err)
 	}
-	log.Println(stringToB32(cookie.Value))
-	uid := mapSidUid[stringToB32(cookie.Value)]
-	log.Println(uid) //why does it print an array of zeros?
-//	userInfo := mapUidUser[mapSidUid[stringToB32(cv)]]
 
 	if r.Method == "GET" {
-//		err := json.NewEncoder(w).Encode(userInfo.wallet)
-//		if err != nil {
-//			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
-//		}
+		err := json.NewEncoder(w).Encode(userInfo.wallet)
+		if err != nil {
+			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
+		}
 	}
 
 	if r.Method == "POST" {
@@ -68,12 +74,16 @@ func dwHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("de: r.ParseForm: %v", err)
 		}
-		//think about how to identify which currency will be increased/decreased by recieved amount
+		if r.Form["deposiLt"] != nil {
+//			deposit
+		}
+		if r.Form["withdraw"] != nil {
+//			withdraw
+		}
 	}
 }
 
 func main() {
-	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/reg", regHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
