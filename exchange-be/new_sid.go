@@ -11,7 +11,7 @@ import (
 )
 
 type session struct {
-	uid b32
+	id b32
 }
 
 var (
@@ -49,7 +49,7 @@ func newSid(email []string, password []string, w http.ResponseWriter) (string, e
 	if err != nil {
 		return "", err
 	}
-	mapSidUid[sid] = session{uid: uid}
+	mapSidUid[sid] = session{id: uid}
 
-	return b32ToString(uid), nil
+	return b32ToString(sid), nil
 }
