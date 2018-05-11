@@ -14,13 +14,8 @@ import (
 type user struct {
 	email    string
 	password []byte
-	wallet   []money
+	money    map[string]float64
 	history  []deals
-}
-
-type money struct {
-	name   string
-	amount float64
 }
 
 type deals struct {
@@ -69,6 +64,6 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	}
 
 	mapEmailUid[em] = uid
-	mapUidUser[uid] = user{email: em, password: cryptedPass}
+	mapUidUser[uid] = user{email: em, password: cryptedPass, money: make(map[string]float64)}
 	return nil
 }
