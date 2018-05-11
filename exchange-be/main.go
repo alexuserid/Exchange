@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +50,33 @@ func getUserInfo(r *http.Request) (user, error) {
 	return mapUidUser[uid.id], nil
 }
 
+func dwHandler(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := getUserInfo(r)
+	if err != nil {
+		log.Printf("dw: getUserInfo: %v", err)
+	}
+	if r.Method == "GET" {
+		err := json.NewEncoder(w).Encode(userInfo.money)
+		if err != nil {
+			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
+		}
+	}
+	if r.Method == "POST" {
+		p := r.URL.Query()
+		operation, currency, amount := strings.Join(p["operation"], ""), strings.Join(p["currency"], ""), strings.Join(p["amount"], "")
+		amountf, err := strconv.ParseFloat(amount, 64)
+		if err != nil {
+			log.Printf("strconv.ParseFloat: %v", err)
+		}
+		if operation == "deposit" {
+			userInfo.money[currency] += amountf
+		}
+		if operation == "withdraw" {
+			userInfo.money[currency] -= amountf
+		}
+	}
+}
+
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := getUserInfo(r)
 	if err != nil {
@@ -56,39 +85,12 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(userInfo)
 }
 
-func dwHandler(w http.ResponseWriter, r *http.Request) {
-	userInfo, err := getUserInfo(r)
-	if err != nil {
-		log.Printf("dw: getUserInfo: %v", err)
-	}
-
-	if r.Method == "GET" {
-		err := json.NewEncoder(w).Encode(userInfo.wallet)
-		if err != nil {
-			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
-		}
-	}
-
-	if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Printf("de: r.ParseForm: %v", err)
-		}
-		if r.Form["deposiLt"] != nil {
-//			deposit
-		}
-		if r.Form["withdraw"] != nil {
-//			withdraw
-		}
-	}
-}
-
 func main() {
 	http.HandleFunc("/reg", regHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
-	http.HandleFunc("/trade", tradeHandler)
 	http.HandleFunc("/dw", dwHandler)
+	http.HandleFunc("/trade", tradeHandler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("http.ListenAndServe: %v", err)
