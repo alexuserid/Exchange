@@ -41,7 +41,7 @@ func getUniqueId(w http.ResponseWriter, marker int) (b32, error) {
 		randoms, err := getRandoms(32)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(jsons{err: "Internal server error. Can't create a new token.Please, contact support."})
+			json.NewEncoder(w).Encode(jsons{Err: "Internal server error. Can't create a new token.Please, contact support."})
 			return b32{0}, err
 		}
 
@@ -59,7 +59,7 @@ func getUniqueId(w http.ResponseWriter, marker int) (b32, error) {
 
 		if i >= 100 {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(jsons{err: "There is no free tokens. Please, try again, or contact support."})
+			json.NewEncoder(w).Encode(jsons{Err: "There is no free tokens. Please, try again, or contact support."})
 			return b32{0}, errors.New("No free tokens.")
 		}
 	}

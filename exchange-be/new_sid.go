@@ -41,7 +41,7 @@ func newSid(email []string, password []string, w http.ResponseWriter) (string, e
 	uid, ok := checker(em, pass)
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(jsons{err: "Wrong email or password."})
+		json.NewEncoder(w).Encode(jsons{Err: "Wrong email or password."})
 		return "", errors.New("Wrong email or password")
 	}
 
