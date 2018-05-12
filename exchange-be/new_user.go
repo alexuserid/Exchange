@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,20 +14,11 @@ type user struct {
 	email    string
 	password []byte
 	money    map[string]float64
-	history  []deals
-}
-
-type deals struct {
-	date      time.Time
-	currency1 string
-	currency2 string
-	amountC1  float64
-	amountC2  float64
-	price     float64
+	history  []b32
 }
 
 type jsons struct {
-	err string
+	Err string
 }
 
 var (
@@ -43,7 +33,7 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	cryptedPass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(jsons{err: "Internal server error. Can't generate hash from password. Please, contact support."})
+		json.NewEncoder(w).Encode(jsons{Err: "Internal server error. Can't generate hash from password. Please, contact support."})
 		return err
 	}
 
@@ -54,7 +44,7 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 	_, ok := mapEmailUid[em]
 	if ok {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(jsons{err: "The email is already exist."})
+		json.NewEncoder(w).Encode(jsons{Err: "The email is already exist."})
 		return errors.New("Existing email")
 	}
 
