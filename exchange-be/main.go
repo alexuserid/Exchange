@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,6 +11,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
 			log.Printf("reg: r.ParseForm: %v", err)
+			return
 		}
 		errf := newUser(r.Form["email"], r.Form["password"], w)
 		if errf != nil {
@@ -26,6 +25,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
 			log.Printf("login: r.ParseForm: %v", err)
+			return
 		}
 		sid, errf := newSid(r.Form["email"], r.Form["password"], w)
 		if errf != nil {
@@ -41,38 +41,25 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "sid", MaxAge: 0})
 }
 
-func getUserInfo(r *http.Request) (user, error) {
-	cookie, err := r.Cookie("sid")
-	if err != nil {
-		return user{}, err
-	}
-	uid := mapSidUid[stringToB32(cookie.Value)]
-	return mapUidUser[uid.id], nil
-}
-
 func dwHandler(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := getUserInfo(r)
 	if err != nil {
 		log.Printf("dw: getUserInfo: %v", err)
+		return
 	}
 	if r.Method == "GET" {
 		err := json.NewEncoder(w).Encode(userInfo.money)
 		if err != nil {
 			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
+			return
 		}
 	}
 	if r.Method == "POST" {
 		p := r.URL.Query()
-		operation, currency, amount := strings.Join(p["operation"], ""), strings.Join(p["currency"], ""), strings.Join(p["amount"], "")
-		amountf, err := strconv.ParseFloat(amount, 64)
+		err := dw(w, userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
 		if err != nil {
-			log.Printf("strconv.ParseFloat: %v", err)
-		}
-		if operation == "deposit" {
-			userInfo.money[currency] += amountf
-		}
-		if operation == "withdraw" {
-			userInfo.money[currency] -= amountf
+			log.Printf("dw: %v", err)
+			return
 		}
 	}
 }
@@ -81,8 +68,35 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := getUserInfo(r)
 	if err != nil {
 		log.Printf("trade: getUserInfo: %v", err)
+		return
 	}
-	log.Println(userInfo)
+	if r.Method == "GET" {
+		err := json.NewEncoder(w).Encode(userInfo)
+		if err != nil {
+			log.Printf("trade: json.NewEncoder(w).Encode(userInfo)")
+			return
+		}
+	}
+	if r.Method == "POST" {
+		p := r.URL.Query()
+		switch p.Get("order") {
+		case "limit" :
+			err := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
+			if err != nil {
+				log.Printf("limitOrder: %v", err)
+			}
+		case "now" :
+			err := nowOrder(userInfo, p.Get("pair"), p.Get("amount"))
+			if err != nil {
+				log.Printf("nowOrder: %v", err)
+			}
+		case "cancel":
+			err := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
+			if err != nil {
+				log.Printf("cancelOrder: %v", err)
+			}
+		}
+	}
 }
 
 func main() {
