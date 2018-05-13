@@ -1,6 +1,7 @@
 Exchange with features:
 - registration
 - login
-- trading
 - deposit
 - withdraw
+- limit order (in progress)
+- market order (in progress)
