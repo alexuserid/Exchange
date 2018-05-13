@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -81,14 +82,14 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query()
 		switch p.Get("order") {
 		case "limit" :
-			err := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
+			err := limitOrder(w, userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
 			if err != nil {
 				log.Printf("limitOrder: %v", err)
 			}
-		case "now" :
-			err := nowOrder(userInfo, p.Get("pair"), p.Get("amount"))
+		case "market" :
+			err := marketOrder(userInfo, p.Get("pair"), p.Get("amount"))
 			if err != nil {
-				log.Printf("nowOrder: %v", err)
+				log.Printf("marketOrder: %v", err)
 			}
 		case "cancel":
 			err := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
@@ -100,6 +101,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	heap.Init(&oq)
 	http.HandleFunc("/reg", regHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)

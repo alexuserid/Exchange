@@ -13,6 +13,7 @@ type b32 [32]byte
 const (
 	markerUid = 1
 	markerSid = 2
+	markerOid = 3
 )
 
 func getRandoms(length int) ([]byte, error) {
@@ -52,6 +53,8 @@ func getUniqueId(w http.ResponseWriter, marker int) (b32, error) {
 			_, ok = mapUidUser[id]
 		case 2:
 			_, ok = mapSidUid[id]
+		case 3:
+			_, ok = mapOidOrder[id]
 		}
 		if !ok {
 			return id, nil
