@@ -14,9 +14,11 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("reg: r.ParseForm: %v", err)
 			return
 		}
-		errf := newUser(r.Form["email"], r.Form["password"], w)
-		if errf != nil {
-			log.Printf("reg: newUser: %v", errf)
+		errc := newUser(r.Form["email"], r.Form["password"])
+		if errc != errNo {
+			w.WriteHeader(errc.Code)
+			json.NewEncoder(w).Encode(errc.Text)
+			if errc.Log {log.Printf("reg: newUser: %v", errc.Text)}
 		}
 	}
 }
@@ -28,9 +30,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("login: r.ParseForm: %v", err)
 			return
 		}
-		sid, errf := newSid(r.Form["email"], r.Form["password"], w)
-		if errf != nil {
-			log.Printf("login: newSid: %v", errf)
+		sid, errc := newSid(r.Form["email"], r.Form["password"])
+		if errc != errNo {
+			w.WriteHeader(errc.Code)
+			json.NewEncoder(w).Encode(errc.Text)
+			if errc.Log {log.Printf("login: newSid: %v", errc.Text)}
 			return
 		}
 		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}
@@ -44,8 +48,10 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func dwHandler(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := getUserInfo(r)
-	if err != nil {
-		log.Printf("dw: getUserInfo: %v", err)
+	if err != errNo {
+		w.WriteHeader(err.Code)
+		json.NewEncoder(w).Encode(err.Text)
+		if err.Log {log.Printf("dw: getUserInfo: %v", err)}
 		return
 	}
 	if r.Method == "GET" {
@@ -57,9 +63,11 @@ func dwHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == "POST" {
 		p := r.URL.Query()
-		err := dw(w, userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
-		if err != nil {
-			log.Printf("dw: %v", err)
+		err := dw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
+		if err != errNo {
+			w.WriteHeader(err.Code)
+			json.NewEncoder(w).Encode(err.Text)
+			if err.Log {log.Printf("dw: %v", err.Text)}
 			return
 		}
 	}
@@ -67,8 +75,10 @@ func dwHandler(w http.ResponseWriter, r *http.Request) {
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := getUserInfo(r)
-	if err != nil {
-		log.Printf("trade: getUserInfo: %v", err)
+	if err != errNo {
+		w.WriteHeader(err.Code)
+		json.NewEncoder(w).Encode(err.Text)
+		if err.Log {log.Printf("dw: getUserInfo: %v", err.Text)}
 		return
 	}
 	if r.Method == "GET" {
@@ -82,19 +92,25 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query()
 		switch p.Get("order") {
 		case "limit" :
-			err := limitOrder(w, userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
-			if err != nil {
-				log.Printf("limitOrder: %v", err)
+			err := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
+			if err != errNo {
+				w.WriteHeader(err.Code)
+				json.NewEncoder(w).Encode(err.Text)
+				if err.Log {log.Printf("limitOrder: %v", err.Text)}
 			}
 		case "market" :
 			err := marketOrder(userInfo, p.Get("pair"), p.Get("amount"))
-			if err != nil {
-				log.Printf("marketOrder: %v", err)
+			if err != errNo {
+				w.WriteHeader(err.Code)
+				json.NewEncoder(w).Encode(err.Text)
+				if err.Log {log.Printf("marketOrder: %v", err.Text)}
 			}
 		case "cancel":
 			err := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
-			if err != nil {
-				log.Printf("cancelOrder: %v", err)
+			if err != errNo {
+				w.WriteHeader(err.Code)
+				json.NewEncoder(w).Encode(err.Text)
+				if err.Log {log.Printf("cancelOrder: %v", err.Text)}
 			}
 		}
 	}

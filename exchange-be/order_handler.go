@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 	"container/heap"
-	"net/http"
 	"sync"
 	"strconv"
 )
@@ -30,37 +29,37 @@ func makeQueueItem(pa string, am, pr float64) {
 	oq.update(ord, ord.value, float64(time.Now().UnixNano()))
 }
 
-func limitOrder(w http.ResponseWriter, userInfo user, pair, amount, price string) error {
+func limitOrder(userInfo user, pair, amount, price string) errorc {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return err
+		return errParseFloat
 	}
 	pricefl, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return err
+		return errParseFloat
 	}
 	mutex := &sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	oid, err := getUniqueId(w, markerOid)
-	if err != nil {
-		return err
+	oid, errc := getUniqueId(markerOid)
+	if errc != errNo {
+		return errc
 	}
 	mapOidOrder[oid] = order{pair, amountfl, pricefl, time.Now()}
 	makeQueueItem(pair, amountfl, pricefl)
-	return nil
+	return errNo
 }
 
-func marketOrder(userInfo user, pair, amount string) error {
+func marketOrder(userInfo user, pair, amount string) errorc {
 	// convert amount to float64
 	// get unique order id
 	// execute
-	return nil
+	return errNo
 }
 
-func cancelOrder(userInfo user, pair, oid string) error {
+func cancelOrder(userInfo user, pair, oid string) errorc {
 	// convert oid to b32
 	// remove order from that pair queue
-	return nil
+	return errNo
 }

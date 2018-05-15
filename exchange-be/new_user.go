@@ -1,9 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
-	"net/http"
 	"strings"
 	"sync"
 
@@ -17,24 +14,18 @@ type user struct {
 	history  []b32
 }
 
-type jsons struct {
-	Err string
-}
-
 var (
 	mapEmailUid = make(map[string]b32)
 	mapUidUser  = make(map[b32]user)
 )
 
-func newUser(email []string, password []string, w http.ResponseWriter) error {
+func newUser(email []string, password []string) errorc {
 	em := strings.Join(email, "")
 	pass := []byte(strings.Join(password, ""))
 
 	cryptedPass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(jsons{Err: "Internal server error. Can't generate hash from password. Please, contact support."})
-		return err
+		return errHashGen
 	}
 
 	mutex := &sync.RWMutex{}
@@ -43,17 +34,15 @@ func newUser(email []string, password []string, w http.ResponseWriter) error {
 
 	_, ok := mapEmailUid[em]
 	if ok {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(jsons{Err: "The email is already exist."})
-		return errors.New("Existing email")
+		return errExistingEmail
 	}
 
-	uid, err := getUniqueId(w, markerUid)
-	if err != nil {
-		return err
+	uid, errc := getUniqueId(markerUid)
+	if errc != errNo {
+		return errc
 	}
 
 	mapEmailUid[em] = uid
 	mapUidUser[uid] = user{email: em, password: cryptedPass, money: make(map[string]float64)}
-	return nil
+	return errNo
 }

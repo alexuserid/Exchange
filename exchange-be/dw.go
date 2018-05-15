@@ -1,26 +1,24 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"sync"
 )
 
-func getUserInfo(r *http.Request) (user, error) {
+func getUserInfo(r *http.Request) (user, errorc) {
 	cookie, err := r.Cookie("sid")
 	if err != nil {
-		return user{}, err
+		return user{}, errNoCookie
 	}
 	uid := mapSidUid[stringToB32(cookie.Value)]
-	return mapUidUser[uid.id], nil
+	return mapUidUser[uid.id], errNo
 }
 
-func dw(w http.ResponseWriter, userInfo user, op, cur, am string) error {
+func dw(userInfo user, op, cur, am string) errorc {
 	amf, err := strconv.ParseFloat(am, 64)
 	if err != nil {
-		return err
+		return errParseFloat
 	}
 
 	mutex := &sync.RWMutex{}
@@ -28,9 +26,7 @@ func dw(w http.ResponseWriter, userInfo user, op, cur, am string) error {
 	defer mutex.Unlock()
 
 	if userInfo.money == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(jsons{Err: "You are not logged in."})
-		return errors.New("Nil map")
+		return errLogin
 	}
 
 	switch op {
@@ -38,11 +34,9 @@ func dw(w http.ResponseWriter, userInfo user, op, cur, am string) error {
 		userInfo.money[cur] += amf
 	case "withdraw":
 		if res := userInfo.money[cur] - amf; res < 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(jsons{Err: "Can't withdraw more money than you have."})
-			return errors.New("Withdraw excess")
+			return errWithdraw
 		}
 		userInfo.money[cur] -= amf
 	}
-	return nil
+	return errNo
 }

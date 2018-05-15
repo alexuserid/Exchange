@@ -1,9 +1,6 @@
 package main
 
 import (
-	"errors"
-	"encoding/json"
-	"net/http"
 	"strings"
 	"sync"
 
@@ -21,16 +18,16 @@ var (
 func checker(em, pass string) (b32, bool) {
 	uid, ok := mapEmailUid[em]
 	if !ok {
-		return b32{0}, false
+		return b32{}, false
 	}
 	err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass))
 	if err != nil {
-		return b32{0}, false
+		return b32{}, false
 	}
 	return uid, true
 }
 
-func newSid(email []string, password []string, w http.ResponseWriter) (string, error) {
+func newSid(email []string, password []string) (string, errorc) {
 	em := strings.Join(email, "")
 	pass := strings.Join(password, "")
 
@@ -40,16 +37,14 @@ func newSid(email []string, password []string, w http.ResponseWriter) (string, e
 
 	uid, ok := checker(em, pass)
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(jsons{Err: "Wrong email or password."})
-		return "", errors.New("Wrong email or password")
+		return "", errWrongEmailPassword
 	}
 
-	sid, err := getUniqueId(w, markerSid)
-	if err != nil {
+	sid, err := getUniqueId(markerSid)
+	if err != errNo {
 		return "", err
 	}
 	mapSidUid[sid] = session{id: uid}
 
-	return b32ToString(sid), nil
+	return b32ToString(sid), errNo
 }
