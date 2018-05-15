@@ -7,17 +7,39 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type UserID [idl]byte
+
 type user struct {
 	email    string
 	password []byte
 	money    map[string]float64
-	history  []b32
+	history  []OrderID
 }
 
 var (
-	mapEmailUid = make(map[string]b32)
-	mapUidUser  = make(map[b32]user)
+	mapEmailUid = make(map[string]UserID)
+	mapUidUser  = make(map[UserID]user)
 )
+
+func getUid() (UserID, errorc) {
+	for i:=0; ; i++ {
+		randoms, err := getRandoms32()
+		if err != errNo {
+			return UserID{}, err
+		}
+		hb := hexMakerb32(randoms)
+		var id UserID
+		copy(id[:], hb[:])
+
+		_, ok := mapUidUser[id]
+		if !ok {
+			return id, errNo
+		}
+		if i > 100 {
+			return UserID{}, errNoToken
+		}
+	}
+}
 
 func newUser(email []string, password []string) errorc {
 	em := strings.Join(email, "")
@@ -36,8 +58,7 @@ func newUser(email []string, password []string) errorc {
 	if ok {
 		return errExistingEmail
 	}
-
-	uid, errc := getUniqueId(markerUid)
+	uid, errc := getUid()
 	if errc != errNo {
 		return errc
 	}

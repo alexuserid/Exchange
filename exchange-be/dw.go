@@ -11,7 +11,9 @@ func getUserInfo(r *http.Request) (user, errorc) {
 	if err != nil {
 		return user{}, errNoCookie
 	}
-	uid := mapSidUid[stringToB32(cookie.Value)]
+	var sid SessionID
+	copy(sid[:], []byte(cookie.Value))
+	uid := mapSidUid[sid]
 	return mapUidUser[uid.id], errNo
 }
 

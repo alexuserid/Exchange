@@ -7,24 +7,46 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type SessionID [idl]byte
+
 type session struct {
-	id b32
+	id UserID
 }
 
 var (
-	mapSidUid = make(map[b32]session)
+	mapSidUid = make(map[SessionID]session)
 )
 
-func checker(em, pass string) (b32, bool) {
+func EmailAndPassChecker(em, pass string) (UserID, bool) {
 	uid, ok := mapEmailUid[em]
 	if !ok {
-		return b32{}, false
+		return UserID{}, false
 	}
 	err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass))
 	if err != nil {
-		return b32{}, false
+		return UserID{}, false
 	}
 	return uid, true
+}
+
+func getSid() (SessionID, errorc) {
+	for i:=0; ; i++ {
+		randoms, err := getRandoms32()
+		if err != errNo {
+			return SessionID{}, err
+		}
+		hb := hexMakerb32(randoms)
+		var id SessionID
+		copy(id[:], hb[:])
+
+		_, ok := mapSidUid[id]
+		if !ok {
+			return id, errNo
+		}
+		if i > 100 {
+			return SessionID{}, errNoToken
+		}
+	}
 }
 
 func newSid(email []string, password []string) (string, errorc) {
@@ -35,16 +57,16 @@ func newSid(email []string, password []string) (string, errorc) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	uid, ok := checker(em, pass)
+	uid, ok := EmailAndPassChecker(em, pass)
 	if !ok {
 		return "", errWrongEmailPassword
 	}
 
-	sid, err := getUniqueId(markerSid)
+	sid, err := getSid()
 	if err != errNo {
 		return "", err
 	}
-	mapSidUid[sid] = session{id: uid}
 
-	return b32ToString(sid), errNo
+	mapSidUid[sid] = session{id: uid}
+	return string(sid[:]), errNo
 }

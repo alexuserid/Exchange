@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+type OrderID [idl]byte
+
 type order struct {
 	pair string
 	amount float64
@@ -16,9 +18,29 @@ type order struct {
 
 // make different maps and queues for each pair
 var (
-	mapOidOrder = make(map[b32]order)
+	mapOidOrder = make(map[OrderID]order)
 	oq = make(PriorityQueue, 1)
 )
+
+func getOid() (OrderID, errorc) {
+	for i:=0; ; i++ {
+		randoms, err := getRandoms32()
+		if err != errNo {
+			return OrderID{}, err
+		}
+		hb := hexMakerb32(randoms)
+		var id OrderID
+		copy(id[:], hb[:])
+
+		_, ok := mapOidOrder[id]
+		if !ok {
+			return id, errNo
+		}
+		if i > 100 {
+			return OrderID{}, errNoToken
+		}
+	}
+}
 
 func makeQueueItem(pa string, am, pr float64) {
 	ord := &Item{
@@ -42,7 +64,7 @@ func limitOrder(userInfo user, pair, amount, price string) errorc {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	oid, errc := getUniqueId(markerOid)
+	oid, errc := getOid()
 	if errc != errNo {
 		return errc
 	}
@@ -59,7 +81,7 @@ func marketOrder(userInfo user, pair, amount string) errorc {
 }
 
 func cancelOrder(userInfo user, pair, oid string) errorc {
-	// convert oid to b32
+	// convert oid to OrderID
 	// remove order from that pair queue
 	return errNo
 }
