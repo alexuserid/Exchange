@@ -8,18 +8,29 @@ import (
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Printf("reg: r.ParseForm: %v", err)
-			return
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		log.Printf("reg: r.ParseForm: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := newUser(r.Form["email"], r.Form["password"]); err != errNo {
+		l := true
+		code := http.StatusInternalServerError
+		if errc, ok := err.(errorc); ok {
+			l = errc.Log
+			code = errc.Code
 		}
-		errc := newUser(r.Form["email"], r.Form["password"])
-		if errc != errNo {
-			w.WriteHeader(errc.Code)
-			json.NewEncoder(w).Encode(errc.Text)
-			if errc.Log {log.Printf("reg: newUser: %v", errc.Text)}
+		w.WriteHeader(code)
+		if l {
+			log.Printf("reg: newUser: %v", err)
+		} else {
+			json.NewEncoder(w).Encode(err)
 		}
+		return
 	}
 }
 
