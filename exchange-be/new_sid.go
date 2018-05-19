@@ -15,6 +15,7 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
+	mutexGetSid = &sync.RWMutex{}
 )
 
 func EmailAndPassChecker(em, pass string) (UserID, bool) {
@@ -53,9 +54,8 @@ func newSid(email []string, password []string) (string, *errorc) {
 	em := strings.Join(email, "")
 	pass := strings.Join(password, "")
 
-	mutex := &sync.RWMutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutexGetSid.Lock()
+	defer mutexGetSid.Unlock()
 
 	uid, ok := EmailAndPassChecker(em, pass)
 	if !ok {

@@ -20,6 +20,7 @@ type order struct {
 var (
 	mapOidOrder = make(map[OrderID]order)
 	oq = make(PriorityQueue, 1)
+	mutexGetOid = &sync.RWMutex{}
 )
 
 func getOid() (OrderID, *errorc) {
@@ -60,9 +61,8 @@ func limitOrder(userInfo user, pair, amount, price string) *errorc {
 	if err != nil {
 		return fullError(errParseFloat, err)
 	}
-	mutex := &sync.RWMutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutexGetOid.Lock()
+	defer mutexGetOid.Unlock()
 
 	oid, errc := getOid()
 	if errc != nil {

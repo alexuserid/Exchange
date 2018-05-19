@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+var mutexDepositAndWithdraw = &sync.RWMutex{}
+
 func getUserInfo(r *http.Request) (user, *errorc) {
 	cookie, err := r.Cookie("sid")
 	if err != nil {
@@ -23,9 +25,8 @@ func depositAndWithdraw(userInfo user, operation, currency, amount string) *erro
 		return fullError(errParseFloat, err)
 	}
 
-	mutex := &sync.RWMutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutexDepositAndWithdraw.Lock()
+	defer mutexDepositAndWithdraw.Unlock()
 
 	if userInfo.money == nil {
 		return errLogin

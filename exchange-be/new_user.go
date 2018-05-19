@@ -19,6 +19,7 @@ type user struct {
 var (
 	mapEmailUid = make(map[string]UserID)
 	mapUidUser  = make(map[UserID]user)
+	mutexGetUid = &sync.RWMutex{}
 )
 
 func getUid() (UserID, *errorc) {
@@ -50,9 +51,8 @@ func newUser(email []string, password []string) *errorc {
 		return fullError(errHashGen, err)
 	}
 
-	mutex := &sync.RWMutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutexGetUid.Lock()
+	defer mutexGetUid.Unlock()
 
 	_, ok := mapEmailUid[em]
 	if ok {
