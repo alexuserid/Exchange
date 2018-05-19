@@ -33,8 +33,7 @@ func getOid() (OrderID, *errorc) {
 		var id OrderID
 		copy(id[:], hb[:])
 
-		_, ok := mapOidOrder[id]
-		if !ok {
+		if _, ok := mapOidOrder[id]; !ok {
 			return id, nil
 		}
 		if i > 100 {

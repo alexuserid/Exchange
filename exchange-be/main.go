@@ -29,8 +29,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
+		if err := r.ParseForm(); err != nil {
 			log.Printf("login: r.ParseForm: %v", err)
 			return
 		}
@@ -63,16 +62,14 @@ func dwHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" {
-		err := json.NewEncoder(w).Encode(userInfo.money)
-		if err != nil {
+		if err := json.NewEncoder(w).Encode(userInfo.money); err != nil {
 			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet): %v", err)
 			return
 		}
 	}
 	if r.Method == "POST" {
 		p := r.URL.Query()
-		errc := depositAndWithdraw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
-		if errc != nil {
+		if errc := depositAndWithdraw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount")); errc != nil {
 			w.WriteHeader(errc.Code)
 			json.NewEncoder(w).Encode(errc.Text)
 			if errc.Err != nil {
@@ -94,8 +91,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" {
-		err := json.NewEncoder(w).Encode(userInfo)
-		if err != nil {
+		if err := json.NewEncoder(w).Encode(userInfo); err != nil {
 			log.Printf("trade: json.NewEncoder(w).Encode(userInfo)")
 			return
 		}
@@ -104,8 +100,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query()
 		switch p.Get("order") {
 		case "limit" :
-			errc := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
-			if errc != nil {
+			if errc := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price")); errc != nil {
 				w.WriteHeader(errc.Code)
 				json.NewEncoder(w).Encode(errc.Text)
 				if errc.Err != nil {
@@ -113,8 +108,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "market" :
-			errc := marketOrder(userInfo, p.Get("pair"), p.Get("amount"))
-			if errc != nil {
+			if errc := marketOrder(userInfo, p.Get("pair"), p.Get("amount")); errc != nil {
 				w.WriteHeader(errc.Code)
 				json.NewEncoder(w).Encode(errc.Text)
 				if errc.Err != nil {
@@ -122,8 +116,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "cancel":
-			errc := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
-			if errc != nil {
+			if errc := cancelOrder(userInfo, p.Get("pair"), p.Get("oid")); errc != nil {
 				w.WriteHeader(errc.Code)
 				json.NewEncoder(w).Encode(errc.Text)
 				if errc.Err != nil {

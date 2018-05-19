@@ -32,8 +32,7 @@ func getUid() (UserID, *errorc) {
 		var id UserID
 		copy(id[:], hb[:])
 
-		_, ok := mapUidUser[id]
-		if !ok {
+		if _, ok := mapUidUser[id]; !ok {
 			return id, nil
 		}
 		if i > 100 {
@@ -54,8 +53,7 @@ func newUser(email []string, password []string) *errorc {
 	mutexGetUid.Lock()
 	defer mutexGetUid.Unlock()
 
-	_, ok := mapEmailUid[em]
-	if ok {
+	if _, ok := mapEmailUid[em]; ok {
 		return errExistingEmail
 	}
 	uid, errc := getUid()

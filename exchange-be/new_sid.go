@@ -23,8 +23,7 @@ func EmailAndPassChecker(em, pass string) (UserID, bool) {
 	if !ok {
 		return UserID{}, false
 	}
-	err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass))
-	if err != nil {
+	if err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass)); err != nil {
 		return UserID{}, false
 	}
 	return uid, true
@@ -40,8 +39,7 @@ func getSid() (SessionID, *errorc) {
 		var id SessionID
 		copy(id[:], hb[:])
 
-		_, ok := mapSidSession[id]
-		if !ok {
+		if _, ok := mapSidSession[id]; !ok {
 			return id, nil
 		}
 		if i > 100 {
