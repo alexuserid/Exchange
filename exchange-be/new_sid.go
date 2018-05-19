@@ -14,7 +14,7 @@ type session struct {
 }
 
 var (
-	mapSidUid = make(map[SessionID]session)
+	mapSidSession = make(map[SessionID]session)
 )
 
 func EmailAndPassChecker(em, pass string) (UserID, bool) {
@@ -39,7 +39,7 @@ func getSid() (SessionID, *errorc) {
 		var id SessionID
 		copy(id[:], hb[:])
 
-		_, ok := mapSidUid[id]
+		_, ok := mapSidSession[id]
 		if !ok {
 			return id, nil
 		}
@@ -67,6 +67,6 @@ func newSid(email []string, password []string) (string, *errorc) {
 		return "", errc
 	}
 
-	mapSidUid[sid] = session{id: uid}
+	mapSidSession[sid] = session{id: uid}
 	return string(sid[:]), nil
 }

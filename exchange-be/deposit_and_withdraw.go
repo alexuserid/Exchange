@@ -13,7 +13,7 @@ func getUserInfo(r *http.Request) (user, *errorc) {
 	}
 	var sid SessionID
 	copy(sid[:], []byte(cookie.Value))
-	uid := mapSidUid[sid]
+	uid := mapSidSession[sid]
 	return mapUidUser[uid.id], nil
 }
 
