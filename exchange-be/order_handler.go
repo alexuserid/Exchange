@@ -22,10 +22,10 @@ var (
 	oq = make(PriorityQueue, 1)
 )
 
-func getOid() (OrderID, errorc) {
+func getOid() (OrderID, *errorc) {
 	for i:=0; ; i++ {
 		randoms, err := getRandoms32()
-		if err != errNo {
+		if err != nil {
 			return OrderID{}, err
 		}
 		hb := hexMakerb32(randoms)
@@ -34,7 +34,7 @@ func getOid() (OrderID, errorc) {
 
 		_, ok := mapOidOrder[id]
 		if !ok {
-			return id, errNo
+			return id, nil
 		}
 		if i > 100 {
 			return OrderID{}, errNoToken
@@ -51,37 +51,37 @@ func makeQueueItem(pa string, am, pr float64) {
 	oq.update(ord, ord.value, float64(time.Now().UnixNano()))
 }
 
-func limitOrder(userInfo user, pair, amount, price string) errorc {
+func limitOrder(userInfo user, pair, amount, price string) *errorc {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return errParseFloat
+		return fullError(errParseFloat, err)
 	}
 	pricefl, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return errParseFloat
+		return fullError(errParseFloat, err)
 	}
 	mutex := &sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	oid, errc := getOid()
-	if errc != errNo {
+	if errc != nil {
 		return errc
 	}
 	mapOidOrder[oid] = order{pair, amountfl, pricefl, time.Now()}
 	makeQueueItem(pair, amountfl, pricefl)
-	return errNo
+	return nil
 }
 
-func marketOrder(userInfo user, pair, amount string) errorc {
+func marketOrder(userInfo user, pair, amount string) *errorc {
 	// convert amount to float64
 	// get unique order id
 	// execute
-	return errNo
+	return nil
 }
 
-func cancelOrder(userInfo user, pair, oid string) errorc {
+func cancelOrder(userInfo user, pair, oid string) *errorc {
 	// convert oid to OrderID
 	// remove order from that pair queue
-	return errNo
+	return nil
 }

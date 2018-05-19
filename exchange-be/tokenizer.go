@@ -7,16 +7,16 @@ import (
 
 const idl = 32
 
-func getRandoms32() ([]byte, errorc) {
+func getRandoms32() ([]byte, *errorc) {
 	randoms := make([]byte, idl)
 	n, err := rand.Read(randoms)
 	if err != nil {
-		return nil, errGetRandom
+		return nil, fullError(errGetRandom, err)
 	}
 	if n != idl {
 		return nil, errLength
 	}
-	return randoms, errNo
+	return randoms, nil
 }
 
 func hexMakerb32(b []byte) [idl]byte {

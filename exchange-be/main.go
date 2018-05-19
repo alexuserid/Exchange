@@ -17,19 +17,12 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := newUser(r.Form["email"], r.Form["password"]); err != errNo {
-		l := true
-		code := http.StatusInternalServerError
-		if errc, ok := err.(errorc); ok {
-			l = errc.Log
-			code = errc.Code
+	if errc := newUser(r.Form["email"], r.Form["password"]); errc != nil {
+		if errc.Err != nil {
+			log.Printf("reg: newUser: %v", errc)
 		}
-		w.WriteHeader(code)
-		if l {
-			log.Printf("reg: newUser: %v", err)
-		} else {
-			json.NewEncoder(w).Encode(err)
-		}
+		w.WriteHeader(errc.Code)
+		json.NewEncoder(w).Encode(errc.Text)
 		return
 	}
 }
@@ -42,10 +35,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sid, errc := newSid(r.Form["email"], r.Form["password"])
-		if errc != errNo {
+		if errc != nil {
 			w.WriteHeader(errc.Code)
 			json.NewEncoder(w).Encode(errc.Text)
-			if errc.Log {log.Printf("login: newSid: %v", errc.Text)}
+			if errc.Err != nil {
+				log.Printf("login: newSid: %v", errc)
+			}
 			return
 		}
 		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}
@@ -58,38 +53,44 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dwHandler(w http.ResponseWriter, r *http.Request) {
-	userInfo, err := getUserInfo(r)
-	if err != errNo {
-		w.WriteHeader(err.Code)
-		json.NewEncoder(w).Encode(err.Text)
-		if err.Log {log.Printf("dw: getUserInfo: %v", err)}
+	userInfo, errc := getUserInfo(r)
+	if errc != nil {
+		w.WriteHeader(errc.Code)
+		json.NewEncoder(w).Encode(errc.Text)
+		if errc.Err != nil {
+			log.Printf("dw: getUserInfo: %v", errc)
+		}
 		return
 	}
 	if r.Method == "GET" {
 		err := json.NewEncoder(w).Encode(userInfo.money)
 		if err != nil {
-			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet)")
+			log.Printf("dw: json.NewEmcoder(w).Encode(userInfo.wallet): %v", err)
 			return
 		}
 	}
 	if r.Method == "POST" {
 		p := r.URL.Query()
-		err := dw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
-		if err != errNo {
-			w.WriteHeader(err.Code)
-			json.NewEncoder(w).Encode(err.Text)
-			if err.Log {log.Printf("dw: %v", err.Text)}
+		errc := depositAndWithdraw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount"))
+		if errc != nil {
+			w.WriteHeader(errc.Code)
+			json.NewEncoder(w).Encode(errc.Text)
+			if errc.Err != nil {
+				log.Printf("dw: %v", errc)
+			}
 			return
 		}
 	}
 }
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
-	userInfo, err := getUserInfo(r)
-	if err != errNo {
-		w.WriteHeader(err.Code)
-		json.NewEncoder(w).Encode(err.Text)
-		if err.Log {log.Printf("dw: getUserInfo: %v", err.Text)}
+	userInfo, errc := getUserInfo(r)
+	if errc != nil {
+		w.WriteHeader(errc.Code)
+		json.NewEncoder(w).Encode(errc.Text)
+		if errc.Err != nil {
+			log.Printf("dw: getUserInfo: %v", errc)
+		}
 		return
 	}
 	if r.Method == "GET" {
@@ -103,25 +104,31 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query()
 		switch p.Get("order") {
 		case "limit" :
-			err := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
-			if err != errNo {
-				w.WriteHeader(err.Code)
-				json.NewEncoder(w).Encode(err.Text)
-				if err.Log {log.Printf("limitOrder: %v", err.Text)}
+			errc := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price"))
+			if errc != nil {
+				w.WriteHeader(errc.Code)
+				json.NewEncoder(w).Encode(errc.Text)
+				if errc.Err != nil {
+					log.Printf("limitOrder: %v", errc)
+				}
 			}
 		case "market" :
-			err := marketOrder(userInfo, p.Get("pair"), p.Get("amount"))
-			if err != errNo {
-				w.WriteHeader(err.Code)
-				json.NewEncoder(w).Encode(err.Text)
-				if err.Log {log.Printf("marketOrder: %v", err.Text)}
+			errc := marketOrder(userInfo, p.Get("pair"), p.Get("amount"))
+			if errc != nil {
+				w.WriteHeader(errc.Code)
+				json.NewEncoder(w).Encode(errc.Text)
+				if errc.Err != nil {
+					log.Printf("marketOrder: %v", errc)
+				}
 			}
 		case "cancel":
-			err := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
-			if err != errNo {
-				w.WriteHeader(err.Code)
-				json.NewEncoder(w).Encode(err.Text)
-				if err.Log {log.Printf("cancelOrder: %v", err.Text)}
+			errc := cancelOrder(userInfo, p.Get("pair"), p.Get("oid"))
+			if errc != nil {
+				w.WriteHeader(errc.Code)
+				json.NewEncoder(w).Encode(errc.Text)
+				if errc.Err != nil {
+					log.Printf("cancelOrder: %v", errc)
+				}
 			}
 		}
 	}

@@ -29,11 +29,11 @@ func EmailAndPassChecker(em, pass string) (UserID, bool) {
 	return uid, true
 }
 
-func getSid() (SessionID, errorc) {
+func getSid() (SessionID, *errorc) {
 	for i:=0; ; i++ {
-		randoms, err := getRandoms32()
-		if err != errNo {
-			return SessionID{}, err
+		randoms, errc := getRandoms32()
+		if errc != nil {
+			return SessionID{}, errc
 		}
 		hb := hexMakerb32(randoms)
 		var id SessionID
@@ -41,7 +41,7 @@ func getSid() (SessionID, errorc) {
 
 		_, ok := mapSidUid[id]
 		if !ok {
-			return id, errNo
+			return id, nil
 		}
 		if i > 100 {
 			return SessionID{}, errNoToken
@@ -49,7 +49,7 @@ func getSid() (SessionID, errorc) {
 	}
 }
 
-func newSid(email []string, password []string) (string, errorc) {
+func newSid(email []string, password []string) (string, *errorc) {
 	em := strings.Join(email, "")
 	pass := strings.Join(password, "")
 
@@ -62,11 +62,11 @@ func newSid(email []string, password []string) (string, errorc) {
 		return "", errWrongEmailPassword
 	}
 
-	sid, err := getSid()
-	if err != errNo {
-		return "", err
+	sid, errc := getSid()
+	if errc != nil {
+		return "", errc
 	}
 
 	mapSidUid[sid] = session{id: uid}
-	return string(sid[:]), errNo
+	return string(sid[:]), nil
 }

@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func getUserInfo(r *http.Request) (user, errorc) {
+func getUserInfo(r *http.Request) (user, *errorc) {
 	cookie, err := r.Cookie("sid")
 	if err != nil {
 		return user{}, errNoCookie
@@ -14,13 +14,13 @@ func getUserInfo(r *http.Request) (user, errorc) {
 	var sid SessionID
 	copy(sid[:], []byte(cookie.Value))
 	uid := mapSidUid[sid]
-	return mapUidUser[uid.id], errNo
+	return mapUidUser[uid.id], nil
 }
 
-func dw(userInfo user, op, cur, am string) errorc {
-	amf, err := strconv.ParseFloat(am, 64)
+func depositAndWithdraw(userInfo user, operation, currency, amount string) *errorc {
+	amf, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return errParseFloat
+		return fullError(errParseFloat, err)
 	}
 
 	mutex := &sync.RWMutex{}
@@ -31,14 +31,14 @@ func dw(userInfo user, op, cur, am string) errorc {
 		return errLogin
 	}
 
-	switch op {
+	switch operation {
 	case "deposit":
-		userInfo.money[cur] += amf
+		userInfo.money[currency] += amf
 	case "withdraw":
-		if res := userInfo.money[cur] - amf; res < 0 {
+		if res := userInfo.money[currency] - amf; res < 0 {
 			return errWithdraw
 		}
-		userInfo.money[cur] -= amf
+		userInfo.money[currency] -= amf
 	}
-	return errNo
+	return nil
 }

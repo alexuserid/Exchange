@@ -21,11 +21,11 @@ var (
 	mapUidUser  = make(map[UserID]user)
 )
 
-func getUid() (UserID, errorc) {
+func getUid() (UserID, *errorc) {
 	for i:=0; ; i++ {
-		randoms, err := getRandoms32()
-		if err != errNo {
-			return UserID{}, err
+		randoms, errc := getRandoms32()
+		if errc != nil {
+			return UserID{}, errc
 		}
 		hb := hexMakerb32(randoms)
 		var id UserID
@@ -33,7 +33,7 @@ func getUid() (UserID, errorc) {
 
 		_, ok := mapUidUser[id]
 		if !ok {
-			return id, errNo
+			return id, nil
 		}
 		if i > 100 {
 			return UserID{}, errNoToken
@@ -41,13 +41,13 @@ func getUid() (UserID, errorc) {
 	}
 }
 
-func newUser(email []string, password []string) errorc {
+func newUser(email []string, password []string) *errorc {
 	em := strings.Join(email, "")
 	pass := []byte(strings.Join(password, ""))
 
 	cryptedPass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
-		return errHashGen
+		return fullError(errHashGen, err)
 	}
 
 	mutex := &sync.RWMutex{}
@@ -59,11 +59,11 @@ func newUser(email []string, password []string) errorc {
 		return errExistingEmail
 	}
 	uid, errc := getUid()
-	if errc != errNo {
+	if errc != nil {
 		return errc
 	}
 
 	mapEmailUid[em] = uid
 	mapUidUser[uid] = user{email: em, password: cryptedPass, money: make(map[string]float64)}
-	return errNo
+	return nil
 }
