@@ -12,8 +12,9 @@ type errorc struct {
 }
 
 func fullError(errc *errorc, err error) *errorc {
-	errc.Err = err
-	return errc
+	e := errc
+	e.Err = err
+	return &e
 }
 
 var (
