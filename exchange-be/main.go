@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +18,9 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if errc := newUser(r.Form["email"], r.Form["password"]); errc != nil {
+	em := strings.Join(r.Form["email"], "")
+	pass := strings.Join(r.Form["password"], "")
+	if errc := newUser(em, pass); errc != nil {
 		if errc.Err != nil {
 			log.Printf("reg: newUser: %v", errc)
 		}
@@ -33,7 +36,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("login: r.ParseForm: %v", err)
 			return
 		}
-		sid, errc := newSid(r.Form["email"], r.Form["password"])
+		em := strings.Join(r.Form["email"], "")
+		pass := strings.Join(r.Form["password"], "")
+		sid, errc := newSid(em, pass)
 		if errc != nil {
 			w.WriteHeader(errc.Code)
 			json.NewEncoder(w).Encode(errc.Text)
@@ -99,7 +104,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		p := r.URL.Query()
 		switch p.Get("order") {
-		case "limit" :
+		case "limit":
 			if errc := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price")); errc != nil {
 				w.WriteHeader(errc.Code)
 				json.NewEncoder(w).Encode(errc.Text)
@@ -107,7 +112,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 					log.Printf("limitOrder: %v", errc)
 				}
 			}
-		case "market" :
+		case "market":
 			if errc := marketOrder(userInfo, p.Get("pair"), p.Get("amount")); errc != nil {
 				w.WriteHeader(errc.Code)
 				json.NewEncoder(w).Encode(errc.Text)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"sync"
 
 	"golang.org/x/crypto/bcrypt"
@@ -15,7 +14,7 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
-	mutexGetSid = &sync.RWMutex{}
+	mutexGetSid   = &sync.RWMutex{}
 )
 
 func EmailAndPassChecker(em, pass string) (UserID, bool) {
@@ -30,7 +29,7 @@ func EmailAndPassChecker(em, pass string) (UserID, bool) {
 }
 
 func getSid() (SessionID, *errorc) {
-	for i:=0; ; i++ {
+	for i := 0; ; i++ {
 		randoms, errc := getRandoms32()
 		if errc != nil {
 			return SessionID{}, errc
@@ -48,14 +47,11 @@ func getSid() (SessionID, *errorc) {
 	}
 }
 
-func newSid(email []string, password []string) (string, *errorc) {
-	em := strings.Join(email, "")
-	pass := strings.Join(password, "")
-
+func newSid(email string, password string) (string, *errorc) {
 	mutexGetSid.Lock()
 	defer mutexGetSid.Unlock()
 
-	uid, ok := EmailAndPassChecker(em, pass)
+	uid, ok := EmailAndPassChecker(email, password)
 	if !ok {
 		return "", errWrongEmailPassword
 	}

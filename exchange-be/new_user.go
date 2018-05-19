@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"sync"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +22,7 @@ var (
 )
 
 func getUid() (UserID, *errorc) {
-	for i:=0; ; i++ {
+	for i := 0; ; i++ {
 		randoms, errc := getRandoms32()
 		if errc != nil {
 			return UserID{}, errc
@@ -41,11 +40,8 @@ func getUid() (UserID, *errorc) {
 	}
 }
 
-func newUser(email []string, password []string) *errorc {
-	em := strings.Join(email, "")
-	pass := []byte(strings.Join(password, ""))
-
-	cryptedPass, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+func newUser(email string, password string) *errorc {
+	cryptedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fullError(errHashGen, err)
 	}
@@ -53,7 +49,7 @@ func newUser(email []string, password []string) *errorc {
 	mutexGetUid.Lock()
 	defer mutexGetUid.Unlock()
 
-	if _, ok := mapEmailUid[em]; ok {
+	if _, ok := mapEmailUid[email]; ok {
 		return errExistingEmail
 	}
 	uid, errc := getUid()
@@ -61,7 +57,7 @@ func newUser(email []string, password []string) *errorc {
 		return errc
 	}
 
-	mapEmailUid[em] = uid
-	mapUidUser[uid] = user{email: em, password: cryptedPass, money: make(map[string]float64)}
+	mapEmailUid[email] = uid
+	mapUidUser[uid] = user{email: email, password: cryptedPass, money: make(map[string]float64)}
 	return nil
 }
