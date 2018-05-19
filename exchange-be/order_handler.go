@@ -1,30 +1,30 @@
 package main
 
 import (
-	"time"
 	"container/heap"
-	"sync"
 	"strconv"
+	"sync"
+	"time"
 )
 
 type OrderID [idl]byte
 
 type order struct {
-	pair string
+	pair   string
 	amount float64
-	price float64
-	date time.Time
+	price  float64
+	date   time.Time
 }
 
 // make different maps and queues for each pair
 var (
 	mapOidOrder = make(map[OrderID]order)
-	oq = make(PriorityQueue, 1)
-	mutexGetOid = &sync.RWMutex{}
+	oq          = make(PriorityQueue, 1)
+	mutexGetOid sync.Mutex
 )
 
 func getOid() (OrderID, *errorc) {
-	for i:=0; ; i++ {
+	for i := 0; ; i++ {
 		randoms, err := getRandoms32()
 		if err != nil {
 			return OrderID{}, err
@@ -44,7 +44,7 @@ func getOid() (OrderID, *errorc) {
 
 func makeQueueItem(pa string, am, pr float64) {
 	ord := &Item{
-		value: order{pair: pa, amount: am, price: pr},
+		value:    order{pair: pa, amount: am, price: pr},
 		priority: pr,
 	}
 	heap.Push(&oq, ord)

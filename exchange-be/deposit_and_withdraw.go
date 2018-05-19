@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-var mutexDepositAndWithdraw = &sync.RWMutex{}
+var mutexDepositAndWithdraw sync.Mutex
 
 func getUserInfo(r *http.Request) (user, *errorc) {
 	cookie, err := r.Cookie("sid")

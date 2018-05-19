@@ -19,7 +19,7 @@ type user struct {
 var (
 	mapEmailUid = make(map[string]UserID)
 	mapUidUser  = make(map[UserID]user)
-	mutexGetUid = &sync.RWMutex{}
+	mutexGetUid   sync.Mutex
 )
 
 func getUid() (UserID, *errorc) {
@@ -74,7 +74,7 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
-	mutexGetSid   = &sync.RWMutex{}
+	mutexGetSid     sync.Mutex
 )
 
 func EmailAndPassChecker(em, pass string) (UserID, bool) {
