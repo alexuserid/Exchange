@@ -70,7 +70,6 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
-	mutexAuth     sync.Mutex
 )
 
 func emailAndPassChecker(em, pass string) (UserID, bool) {
