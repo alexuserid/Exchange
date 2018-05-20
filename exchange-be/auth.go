@@ -20,7 +20,7 @@ type user struct {
 var (
 	mapEmailUid = make(map[string]UserID)
 	mapUidUser  = make(map[UserID]user)
-	mutexGetUid sync.Mutex
+	mutexAuth   sync.Mutex
 )
 
 func getUid() (UserID, error) {
@@ -45,8 +45,8 @@ func newUser(email string, password string) error {
 		return err
 	}
 
-	mutexGetUid.Lock()
-	defer mutexGetUid.Unlock()
+	mutexAuth.Lock()
+	defer mutexAuth.Unlock()
 
 	if _, has := mapEmailUid[email]; has {
 		return status.WithCode(statusConflict, "The email is already exist")
@@ -70,12 +70,12 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
-	mutexGetSid   sync.Mutex
+	mutexAuth     sync.Mutex
 )
 
 func emailAndPassChecker(em, pass string) (UserID, bool) {
-	mutexGetUid.Lock()
-	defer mutexGetUid.Unlock()
+	mutexAuth.Lock()
+	defer mutexAuth.Unlock()
 
 	uid, has := mapEmailUid[em]
 	if !has {
@@ -104,8 +104,8 @@ func getSid() (SessionID, error) {
 }
 
 func newSid(email string, password string) (string, error) {
-	mutexGetSid.Lock()
-	defer mutexGetSid.Unlock()
+	mutexAuth.Lock()
+	defer mutexAuth.Unlock()
 
 	uid, ok := emailAndPassChecker(email, password)
 	if !ok {
