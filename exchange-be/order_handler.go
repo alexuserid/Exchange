@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/starius/status"
 )
 
 type OrderID [idl]byte
@@ -23,11 +25,11 @@ var (
 	mutexGetOid sync.Mutex
 )
 
-func getOid() (OrderID, *errorc) {
+func getOid() (OrderID, error) {
 	for i := 0; ; i++ {
 		randoms, err := getRandoms32()
 		if err != nil {
-			return OrderID{}, err
+			return OrderID{}, status.Format("getRandom32: %v", err)
 		}
 		hb := hexMakerb32(randoms)
 		var id OrderID
@@ -37,7 +39,7 @@ func getOid() (OrderID, *errorc) {
 			return id, nil
 		}
 		if i > 100 {
-			return OrderID{}, errNoToken
+			return OrderID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
@@ -51,35 +53,35 @@ func makeQueueItem(pa string, am, pr float64) {
 	oq.update(ord, ord.value, float64(time.Now().UnixNano()))
 }
 
-func limitOrder(userInfo user, pair, amount, price string) *errorc {
+func limitOrder(userInfo user, pair, amount, price string) error {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return fullError(errParseFloat, err)
+		return status.WithCode(StatusBadRequest, "Wrong amount format:ParseFloat: %v", err)
 	}
 	pricefl, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return fullError(errParseFloat, err)
+		return status.WithCode(StatusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
 	}
 	mutexGetOid.Lock()
 	defer mutexGetOid.Unlock()
 
-	oid, errc := getOid()
-	if errc != nil {
-		return errc
+	oid, err := getOid()
+	if err != nil {
+		return err
 	}
 	mapOidOrder[oid] = order{pair, amountfl, pricefl, time.Now()}
 	makeQueueItem(pair, amountfl, pricefl)
 	return nil
 }
 
-func marketOrder(userInfo user, pair, amount string) *errorc {
+func marketOrder(userInfo user, pair, amount string) error {
 	// convert amount to float64
 	// get unique order id
 	// execute
 	return nil
 }
 
-func cancelOrder(userInfo user, pair, oid string) *errorc {
+func cancelOrder(userInfo user, pair, oid string) error {
 	// convert oid to OrderID
 	// remove order from that pair queue
 	return nil

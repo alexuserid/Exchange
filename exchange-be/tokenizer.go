@@ -3,18 +3,20 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+
+	"github.com/starius/status"
 )
 
 const idl = 32
 
-func getRandoms32() ([]byte, *errorc) {
+func getRandoms32() ([]byte, error) {
 	randoms := make([]byte, idl)
 	n, err := rand.Read(randoms)
 	if err != nil {
-		return nil, fullError(errGetRandom, err)
+		return nil, status.WithCode(StatusInternalServerError, "rand.Read: %v", err)
 	}
 	if n != idl {
-		return nil, errLength
+		return nil, status.WithCode(StatusInternalServerError, "rand.Read: length error")
 	}
 	return randoms, nil
 }

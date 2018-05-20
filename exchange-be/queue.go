@@ -7,7 +7,7 @@ import (
 type Item struct {
 	value    order
 	priority float64
-	index int
+	index    int
 }
 
 type PriorityQueue []*Item

@@ -3,6 +3,7 @@ package main
 import (
 	"sync"
 
+	"github.com/starius/status"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,14 +20,14 @@ type user struct {
 var (
 	mapEmailUid = make(map[string]UserID)
 	mapUidUser  = make(map[UserID]user)
-	mutexGetUid   sync.Mutex
+	mutexGetUid sync.Mutex
 )
 
-func getUid() (UserID, *errorc) {
+func getUid() (UserID, error) {
 	for i := 0; ; i++ {
-		randoms, errc := getRandoms32()
-		if errc != nil {
-			return UserID{}, errc
+		randoms, err := getRandoms32()
+		if err != nil {
+			return UserID{}, status.Format("getRansom32: %v", err)
 		}
 		hb := hexMakerb32(randoms)
 		var id UserID
@@ -36,34 +37,32 @@ func getUid() (UserID, *errorc) {
 			return id, nil
 		}
 		if i > 100 {
-			return UserID{}, errNoToken
+			return UserID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
 
-func newUser(email string, password string) *errorc {
+func newUser(email string, password string) error {
 	cryptedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return fullError(errHashGen, err)
+		return err
 	}
 
 	mutexGetUid.Lock()
 	defer mutexGetUid.Unlock()
 
 	if _, ok := mapEmailUid[email]; ok {
-		return errExistingEmail
+		return status.WithCode(StatusBadRequest, "The email is already exist")
 	}
-	uid, errc := getUid()
-	if errc != nil {
-		return errc
+	uid, err := getUid()
+	if err != nil {
+		return status.Format("getUid: %v", err)
 	}
 
 	mapEmailUid[email] = uid
 	mapUidUser[uid] = user{email: email, password: cryptedPass, money: make(map[string]float64)}
 	return nil
 }
-
-
 
 //making session after login
 type SessionID [idl]byte
@@ -74,7 +73,7 @@ type session struct {
 
 var (
 	mapSidSession = make(map[SessionID]session)
-	mutexGetSid     sync.Mutex
+	mutexGetSid   sync.Mutex
 )
 
 func EmailAndPassChecker(em, pass string) (UserID, bool) {
@@ -88,11 +87,11 @@ func EmailAndPassChecker(em, pass string) (UserID, bool) {
 	return uid, true
 }
 
-func getSid() (SessionID, *errorc) {
+func getSid() (SessionID, error) {
 	for i := 0; ; i++ {
-		randoms, errc := getRandoms32()
-		if errc != nil {
-			return SessionID{}, errc
+		randoms, err := getRandoms32()
+		if err != nil {
+			return SessionID{}, status.Format("getRandom32: %v", err)
 		}
 		hb := hexMakerb32(randoms)
 		var id SessionID
@@ -102,23 +101,23 @@ func getSid() (SessionID, *errorc) {
 			return id, nil
 		}
 		if i > 100 {
-			return SessionID{}, errNoToken
+			return SessionID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
 
-func newSid(email string, password string) (string, *errorc) {
+func newSid(email string, password string) (string, error) {
 	mutexGetSid.Lock()
 	defer mutexGetSid.Unlock()
 
 	uid, ok := EmailAndPassChecker(email, password)
 	if !ok {
-		return "", errWrongEmailPassword
+		return "", status.WithCode(StatusBadRequest, "Wrong email or password")
 	}
 
-	sid, errc := getSid()
-	if errc != nil {
-		return "", errc
+	sid, err := getSid()
+	if err != nil {
+		return "", status.Format("getSid: %v", err)
 	}
 
 	mapSidSession[sid] = session{id: uid}

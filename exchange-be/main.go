@@ -6,26 +6,29 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	//	"github.com/starius/status"
+)
+
+const (
+	StatusInternalServerError = http.StatusInternalServerError
+	StatusBadRequest          = http.StatusBadRequest
+	StatusMethodNotAllowed    = http.StatusMethodNotAllowed
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.WriteHeader(StatusMethodNotAllowed)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
 		log.Printf("reg: r.ParseForm: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(StatusBadRequest)
 		return
 	}
 	em := strings.Join(r.Form["email"], "")
 	pass := strings.Join(r.Form["password"], "")
-	if errc := newUser(em, pass); errc != nil {
-		if errc.Err != nil {
-			log.Printf("reg: newUser: %v", errc)
-		}
-		w.WriteHeader(errc.Code)
-		json.NewEncoder(w).Encode(errc.Text)
+	if err := newUser(em, pass); err != nil {
+		log.Printf("reg: newUser: %v", err)
 		return
 	}
 }
@@ -38,13 +41,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		em := strings.Join(r.Form["email"], "")
 		pass := strings.Join(r.Form["password"], "")
-		sid, errc := newSid(em, pass)
-		if errc != nil {
-			w.WriteHeader(errc.Code)
-			json.NewEncoder(w).Encode(errc.Text)
-			if errc.Err != nil {
-				log.Printf("login: newSid: %v", errc)
-			}
+		sid, err := newSid(em, pass)
+		if err != nil {
+			log.Printf("login: newSid: %v", err)
 			return
 		}
 		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}
@@ -57,13 +56,9 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dwHandler(w http.ResponseWriter, r *http.Request) {
-	userInfo, errc := getUserInfo(r)
-	if errc != nil {
-		w.WriteHeader(errc.Code)
-		json.NewEncoder(w).Encode(errc.Text)
-		if errc.Err != nil {
-			log.Printf("dw: getUserInfo: %v", errc)
-		}
+	userInfo, err := getUserInfo(r)
+	if err != nil {
+		log.Printf("dw: getUserInfo: %v", err)
 		return
 	}
 	if r.Method == "GET" {
@@ -74,25 +69,17 @@ func dwHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == "POST" {
 		p := r.URL.Query()
-		if errc := depositAndWithdraw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount")); errc != nil {
-			w.WriteHeader(errc.Code)
-			json.NewEncoder(w).Encode(errc.Text)
-			if errc.Err != nil {
-				log.Printf("dw: %v", errc)
-			}
+		if err := depositAndWithdraw(userInfo, p.Get("operation"), p.Get("currency"), p.Get("amount")); err != nil {
+			log.Printf("dw: depositAndWithdraw: %v", err)
 			return
 		}
 	}
 }
 
 func tradeHandler(w http.ResponseWriter, r *http.Request) {
-	userInfo, errc := getUserInfo(r)
-	if errc != nil {
-		w.WriteHeader(errc.Code)
-		json.NewEncoder(w).Encode(errc.Text)
-		if errc.Err != nil {
-			log.Printf("dw: getUserInfo: %v", errc)
-		}
+	userInfo, err := getUserInfo(r)
+	if err != nil {
+		log.Println("trade: userInfo: %v", err)
 		return
 	}
 	if r.Method == "GET" {
@@ -105,28 +92,16 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query()
 		switch p.Get("order") {
 		case "limit":
-			if errc := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price")); errc != nil {
-				w.WriteHeader(errc.Code)
-				json.NewEncoder(w).Encode(errc.Text)
-				if errc.Err != nil {
-					log.Printf("limitOrder: %v", errc)
-				}
+			if err := limitOrder(userInfo, p.Get("pair"), p.Get("amount"), p.Get("price")); err != nil {
+				log.Printf("trade: limitOrder: %v", err)
 			}
 		case "market":
 			if errc := marketOrder(userInfo, p.Get("pair"), p.Get("amount")); errc != nil {
-				w.WriteHeader(errc.Code)
-				json.NewEncoder(w).Encode(errc.Text)
-				if errc.Err != nil {
-					log.Printf("marketOrder: %v", errc)
-				}
+				log.Printf("trade: markerOrder: %v", err)
 			}
 		case "cancel":
 			if errc := cancelOrder(userInfo, p.Get("pair"), p.Get("oid")); errc != nil {
-				w.WriteHeader(errc.Code)
-				json.NewEncoder(w).Encode(errc.Text)
-				if errc.Err != nil {
-					log.Printf("cancelOrder: %v", errc)
-				}
+				log.Printf("trade: cancelOrder: %v", err)
 			}
 		}
 	}
@@ -139,8 +114,7 @@ func main() {
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/dw", dwHandler)
 	http.HandleFunc("/trade", tradeHandler)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("http.ListenAndServe: %v", err)
 	}
 }
