@@ -9,19 +9,20 @@ import (
 )
 
 const (
-	StatusInternalServerError = http.StatusInternalServerError
-	StatusBadRequest          = http.StatusBadRequest
-	StatusMethodNotAllowed    = http.StatusMethodNotAllowed
+	statusInternalServerError = http.StatusInternalServerError
+	statusBadRequest          = http.StatusBadRequest
+	statusMethodNotAllowed    = http.StatusMethodNotAllowed
+	statusConflict            = http.StatusConflict
 )
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		w.WriteHeader(StatusMethodNotAllowed)
+		w.WriteHeader(statusMethodNotAllowed)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
 		log.Printf("reg: r.ParseForm: %v", err)
-		w.WriteHeader(StatusBadRequest)
+		w.WriteHeader(statusBadRequest)
 		return
 	}
 	if err := newUser(r.Form.Get("email"), r.Form.Get("password")); err != nil {

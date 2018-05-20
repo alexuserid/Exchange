@@ -13,7 +13,7 @@ var mutexDepositAndWithdraw sync.Mutex
 func getUserInfo(r *http.Request) (user, error) {
 	cookie, err := r.Cookie("sid")
 	if err != nil {
-		return user{}, status.WithCode(StatusBadRequest, "You are not logged in: %v", err)
+		return user{}, status.WithCode(statusBadRequest, "You are not logged in: %v", err)
 	}
 	var sid SessionID
 	copy(sid[:], []byte(cookie.Value))
@@ -24,14 +24,14 @@ func getUserInfo(r *http.Request) (user, error) {
 func depositAndWithdraw(userInfo user, operation, currency, amount string) error {
 	amf, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return status.WithCode(StatusBadRequest, "Wrong amount format: ParseFloat: %v", err)
+		return status.WithCode(statusBadRequest, "Wrong amount format: ParseFloat: %v", err)
 	}
 
 	mutexDepositAndWithdraw.Lock()
 	defer mutexDepositAndWithdraw.Unlock()
 
 	if userInfo.money == nil {
-		return status.WithCode(StatusBadRequest, "You are not logged in: userInfo.money == nil")
+		return status.WithCode(statusBadRequest, "You are not logged in: userInfo.money == nil")
 	}
 
 	switch operation {
@@ -39,7 +39,7 @@ func depositAndWithdraw(userInfo user, operation, currency, amount string) error
 		userInfo.money[currency] += amf
 	case "withdraw":
 		if res := userInfo.money[currency] - amf; res < 0 {
-			return status.WithCode(StatusBadRequest, "You can't withdraw more money than you have")
+			return status.WithCode(statusBadRequest, "You can't withdraw more money than you have")
 		}
 		userInfo.money[currency] -= amf
 	}

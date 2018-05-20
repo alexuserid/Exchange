@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//making user after registration
+//Make user after registration.
 type UserID [idl]byte
 
 type user struct {
@@ -24,20 +24,17 @@ var (
 )
 
 func getUid() (UserID, error) {
-	for i := 0; ; i++ {
+	for {
 		randoms, err := getRandoms32()
 		if err != nil {
 			return UserID{}, status.Format("getRansom32: %v", err)
 		}
-		hb := hexMakerb32(randoms)
+		hb := makeHex(randoms)
 		var id UserID
 		copy(id[:], hb[:])
 
-		if _, ok := mapUidUser[id]; !ok {
+		if _, has := mapUidUser[id]; !has {
 			return id, nil
-		}
-		if i > 100 {
-			return UserID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
@@ -51,8 +48,8 @@ func newUser(email string, password string) error {
 	mutexGetUid.Lock()
 	defer mutexGetUid.Unlock()
 
-	if _, ok := mapEmailUid[email]; ok {
-		return status.WithCode(StatusBadRequest, "The email is already exist")
+	if _, has := mapEmailUid[email]; has {
+		return status.WithCode(statusConflict, "The email is already exist")
 	}
 	uid, err := getUid()
 	if err != nil {
@@ -64,7 +61,7 @@ func newUser(email string, password string) error {
 	return nil
 }
 
-//making session after login
+//Make session after login.
 type SessionID [idl]byte
 
 type session struct {
@@ -76,9 +73,12 @@ var (
 	mutexGetSid   sync.Mutex
 )
 
-func EmailAndPassChecker(em, pass string) (UserID, bool) {
-	uid, ok := mapEmailUid[em]
-	if !ok {
+func emailAndPassChecker(em, pass string) (UserID, bool) {
+	mutexGetUid.Lock()
+	defer mutexGetUid.Unlock()
+
+	uid, has := mapEmailUid[em]
+	if !has {
 		return UserID{}, false
 	}
 	if err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass)); err != nil {
@@ -88,20 +88,17 @@ func EmailAndPassChecker(em, pass string) (UserID, bool) {
 }
 
 func getSid() (SessionID, error) {
-	for i := 0; ; i++ {
+	for {
 		randoms, err := getRandoms32()
 		if err != nil {
 			return SessionID{}, status.Format("getRandom32: %v", err)
 		}
-		hb := hexMakerb32(randoms)
+		hb := makeHex(randoms)
 		var id SessionID
 		copy(id[:], hb[:])
 
-		if _, ok := mapSidSession[id]; !ok {
+		if _, has := mapSidSession[id]; !has {
 			return id, nil
-		}
-		if i > 100 {
-			return SessionID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
@@ -110,9 +107,9 @@ func newSid(email string, password string) (string, error) {
 	mutexGetSid.Lock()
 	defer mutexGetSid.Unlock()
 
-	uid, ok := EmailAndPassChecker(email, password)
+	uid, ok := emailAndPassChecker(email, password)
 	if !ok {
-		return "", status.WithCode(StatusBadRequest, "Wrong email or password")
+		return "", status.WithCode(statusBadRequest, "Wrong email or password")
 	}
 
 	sid, err := getSid()

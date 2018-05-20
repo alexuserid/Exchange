@@ -26,20 +26,17 @@ var (
 )
 
 func getOid() (OrderID, error) {
-	for i := 0; ; i++ {
+	for {
 		randoms, err := getRandoms32()
 		if err != nil {
 			return OrderID{}, status.Format("getRandom32: %v", err)
 		}
-		hb := hexMakerb32(randoms)
+		hb := makeHex(randoms)
 		var id OrderID
 		copy(id[:], hb[:])
 
-		if _, ok := mapOidOrder[id]; !ok {
+		if _, has := mapOidOrder[id]; !has {
 			return id, nil
-		}
-		if i > 100 {
-			return OrderID{}, status.WithCode(StatusInternalServerError, "no free token after 100 iteration")
 		}
 	}
 }
@@ -56,11 +53,11 @@ func makeQueueItem(pa string, am, pr float64) {
 func limitOrder(userInfo user, pair, amount, price string) error {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return status.WithCode(StatusBadRequest, "Wrong amount format:ParseFloat: %v", err)
+		return status.WithCode(statusBadRequest, "Wrong amount format:ParseFloat: %v", err)
 	}
 	pricefl, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return status.WithCode(StatusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
+		return status.WithCode(statusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
 	}
 	mutexGetOid.Lock()
 	defer mutexGetOid.Unlock()
