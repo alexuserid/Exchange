@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 	//	"github.com/starius/status"
 )
 
@@ -25,9 +24,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(StatusBadRequest)
 		return
 	}
-	em := strings.Join(r.Form["email"], "")
-	pass := strings.Join(r.Form["password"], "")
-	if err := newUser(em, pass); err != nil {
+	if err := newUser(r.Form.Get("email"), r.Form.Get("password")); err != nil {
 		log.Printf("reg: newUser: %v", err)
 		return
 	}
@@ -39,9 +36,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("login: r.ParseForm: %v", err)
 			return
 		}
-		em := strings.Join(r.Form["email"], "")
-		pass := strings.Join(r.Form["password"], "")
-		sid, err := newSid(em, pass)
+		sid, err := newSid(r.Form.Get("email"), r.Form.Get("password"))
 		if err != nil {
 			log.Printf("login: newSid: %v", err)
 			return
