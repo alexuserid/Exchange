@@ -1,0 +1,5 @@
+'#' Ignore curl cookie
+cookie.txt
+
+'#' Ignore swp files
+*.swp
