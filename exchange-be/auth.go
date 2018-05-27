@@ -96,9 +96,6 @@ func login(email string, password string) (string, error) {
 	defer authMutex.Unlock()
 
 	emailAndPassCheck := func(email, pass string) (userID, bool) {
-		authMutex.Lock()
-		defer authMutex.Unlock()
-
 		uid, has := mapEmailUid[email]
 		if !has {
 			return userID{}, false

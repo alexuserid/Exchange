@@ -19,7 +19,7 @@ type order struct {
 	date   time.Time
 }
 
-// make different maps and queues for each pair
+// TODO(alexuserid): different maps and queues for each pair
 var (
 	mapOidOrder = make(map[OrderID]order)
 	oq          = make(PriorityQueue, 1)
@@ -42,10 +42,10 @@ func getOid() (OrderID, error) {
 	}
 }
 
-func makeQueueItem(pa string, am, pr float64) {
+func makeQueueItem(pair string, amount, price float64) {
 	ord := &Item{
-		value:    order{pair: pa, amount: am, price: pr},
-		priority: pr,
+		value:    order{pair: pair, amount: amount, price: price},
+		priority: price,
 	}
 	heap.Push(&oq, ord)
 	oq.update(ord, ord.value, float64(time.Now().UnixNano()))
@@ -73,14 +73,24 @@ func limitOrder(userInfo user, pair, amount, price string) error {
 }
 
 func marketOrder(userInfo user, pair, amount string) error {
-	// convert amount to float64
-	// get unique order id
-	// execute
+	/* 
+	TODO(alexuserid):
+	convert amount to float64
+	get unique order id
+	execute
+	*/
 	return nil
 }
 
 func cancelOrder(userInfo user, pair, oid string) error {
-	// convert oid to OrderID
-	// remove order from that pair queue
+	/*
+	TODO(alexuserid):
+	convert oid to OrderID
+	remove order from that pair queue
+	*/
 	return nil
+}
+
+func init() {
+	heap.Init(&oq)
 }
