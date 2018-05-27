@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/heap"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -22,7 +23,7 @@ type order struct {
 var (
 	mapOidOrder = make(map[OrderID]order)
 	oq          = make(PriorityQueue, 1)
-	mutexGetOid sync.Mutex
+	OidMutex    sync.Mutex
 )
 
 func getOid() (OrderID, error) {
@@ -31,7 +32,7 @@ func getOid() (OrderID, error) {
 		if err != nil {
 			return OrderID{}, status.Format("getRandom32: %v", err)
 		}
-		hb := makeHex(randoms)
+		hb := toHex(randoms)
 		var id OrderID
 		copy(id[:], hb[:])
 
@@ -53,14 +54,14 @@ func makeQueueItem(pa string, am, pr float64) {
 func limitOrder(userInfo user, pair, amount, price string) error {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return status.WithCode(statusBadRequest, "Wrong amount format:ParseFloat: %v", err)
+		return status.WithCode(http.StatusBadRequest, "Wrong amount format:ParseFloat: %v", err)
 	}
 	pricefl, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return status.WithCode(statusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
+		return status.WithCode(http.StatusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
 	}
-	mutexGetOid.Lock()
-	defer mutexGetOid.Unlock()
+	OidMutex.Lock()
+	defer OidMutex.Unlock()
 
 	oid, err := getOid()
 	if err != nil {

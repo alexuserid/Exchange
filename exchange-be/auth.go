@@ -1,14 +1,16 @@
 package main
 
 import (
+	"net/http"
 	"sync"
 
 	"github.com/starius/status"
 	"golang.org/x/crypto/bcrypt"
 )
 
-//Make user after registration.
-type UserID [idl]byte
+/* This part creates user account after registration. */
+
+type userID [idl]byte
 
 type user struct {
 	email    string
@@ -18,19 +20,19 @@ type user struct {
 }
 
 var (
-	mapEmailUid = make(map[string]UserID)
-	mapUidUser  = make(map[UserID]user)
-	mutexAuth   sync.Mutex
+	mapEmailUid = make(map[string]userID)
+	mapUidUser  = make(map[userID]user)
+	authMutex   sync.Mutex
 )
 
-func getUid() (UserID, error) {
+func newUid() (userID, error) {
 	for {
 		randoms, err := getRandoms32()
 		if err != nil {
-			return UserID{}, status.Format("getRansom32: %v", err)
+			return userID{}, status.Format("getRansom32: %v", err)
 		}
-		hb := makeHex(randoms)
-		var id UserID
+		hb := toHex(randoms)
+		var id userID
 		copy(id[:], hb[:])
 
 		if _, has := mapUidUser[id]; !has {
@@ -39,21 +41,21 @@ func getUid() (UserID, error) {
 	}
 }
 
-func newUser(email string, password string) error {
+func register(email string, password string) error {
 	cryptedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	mutexAuth.Lock()
-	defer mutexAuth.Unlock()
+	authMutex.Lock()
+	defer authMutex.Unlock()
 
 	if _, has := mapEmailUid[email]; has {
-		return status.WithCode(statusConflict, "The email is already exist")
+		return status.WithCode(http.StatusConflict, "The email already exist")
 	}
-	uid, err := getUid()
+	uid, err := newUid()
 	if err != nil {
-		return status.Format("getUid: %v", err)
+		return status.Format("newUid: %v", err)
 	}
 
 	mapEmailUid[email] = uid
@@ -61,39 +63,26 @@ func newUser(email string, password string) error {
 	return nil
 }
 
-//Make session after login.
-type SessionID [idl]byte
+/* This part creates session for user after login. */
+
+type sessionID [idl]byte
 
 type session struct {
-	id UserID
+	id userID
 }
 
 var (
-	mapSidSession = make(map[SessionID]session)
+	mapSidSession = make(map[sessionID]session)
 )
 
-func emailAndPassChecker(em, pass string) (UserID, bool) {
-	mutexAuth.Lock()
-	defer mutexAuth.Unlock()
-
-	uid, has := mapEmailUid[em]
-	if !has {
-		return UserID{}, false
-	}
-	if err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass)); err != nil {
-		return UserID{}, false
-	}
-	return uid, true
-}
-
-func getSid() (SessionID, error) {
+func newSid() (sessionID, error) {
 	for {
 		randoms, err := getRandoms32()
 		if err != nil {
-			return SessionID{}, status.Format("getRandom32: %v", err)
+			return sessionID{}, status.Format("getRandom32: %v", err)
 		}
-		hb := makeHex(randoms)
-		var id SessionID
+		hb := toHex(randoms)
+		var id sessionID
 		copy(id[:], hb[:])
 
 		if _, has := mapSidSession[id]; !has {
@@ -102,18 +91,31 @@ func getSid() (SessionID, error) {
 	}
 }
 
-func newSid(email string, password string) (string, error) {
-	mutexAuth.Lock()
-	defer mutexAuth.Unlock()
+func login(email string, password string) (string, error) {
+	authMutex.Lock()
+	defer authMutex.Unlock()
 
-	uid, ok := emailAndPassChecker(email, password)
+	emailAndPassCheck := func(email, pass string) (userID, bool) {
+		authMutex.Lock()
+		defer authMutex.Unlock()
+
+		uid, has := mapEmailUid[email]
+		if !has {
+			return userID{}, false
+		}
+		if err := bcrypt.CompareHashAndPassword(mapUidUser[uid].password, []byte(pass)); err != nil {
+			return userID{}, false
+		}
+		return uid, true
+	}
+	uid, ok := emailAndPassCheck(email, password)
 	if !ok {
-		return "", status.WithCode(statusBadRequest, "Wrong email or password")
+		return "", status.WithCode(http.StatusBadRequest, "Wrong email or password")
 	}
 
-	sid, err := getSid()
+	sid, err := newSid()
 	if err != nil {
-		return "", status.Format("getSid: %v", err)
+		return "", status.Format("newSid: %v", err)
 	}
 
 	mapSidSession[sid] = session{id: uid}

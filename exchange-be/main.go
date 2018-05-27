@@ -8,25 +8,18 @@ import (
 	//	"github.com/starius/status"
 )
 
-const (
-	statusInternalServerError = http.StatusInternalServerError
-	statusBadRequest          = http.StatusBadRequest
-	statusMethodNotAllowed    = http.StatusMethodNotAllowed
-	statusConflict            = http.StatusConflict
-)
-
 func regHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		w.WriteHeader(statusMethodNotAllowed)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
 		log.Printf("reg: r.ParseForm: %v", err)
-		w.WriteHeader(statusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := newUser(r.Form.Get("email"), r.Form.Get("password")); err != nil {
-		log.Printf("reg: newUser: %v", err)
+	if err := register(r.Form.Get("email"), r.Form.Get("password")); err != nil {
+		log.Printf("reg: register: %v", err)
 		return
 	}
 }
@@ -37,9 +30,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("login: r.ParseForm: %v", err)
 			return
 		}
-		sid, err := newSid(r.Form.Get("email"), r.Form.Get("password"))
+		sid, err := login(r.Form.Get("email"), r.Form.Get("password"))
 		if err != nil {
-			log.Printf("login: newSid: %v", err)
+			log.Printf("login: login: %v", err)
 			return
 		}
 		cookieLogin := http.Cookie{Name: "sid", Value: sid, Path: "/", MaxAge: 3600, HttpOnly: true}

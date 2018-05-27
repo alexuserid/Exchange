@@ -8,14 +8,14 @@ import (
 	"github.com/starius/status"
 )
 
-var mutexDepositAndWithdraw sync.Mutex
+var depositAndWithdrawMutex sync.Mutex
 
 func getUserInfo(r *http.Request) (user, error) {
 	cookie, err := r.Cookie("sid")
 	if err != nil {
-		return user{}, status.WithCode(statusBadRequest, "You are not logged in: %v", err)
+		return user{}, status.WithCode(http.StatusBadRequest, "You are not logged in: %v", err)
 	}
-	var sid SessionID
+	var sid sessionID
 	copy(sid[:], []byte(cookie.Value))
 	uid := mapSidSession[sid]
 	return mapUidUser[uid.id], nil
@@ -24,14 +24,14 @@ func getUserInfo(r *http.Request) (user, error) {
 func depositAndWithdraw(userInfo user, operation, currency, amount string) error {
 	amf, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return status.WithCode(statusBadRequest, "Wrong amount format: ParseFloat: %v", err)
+		return status.WithCode(http.StatusBadRequest, "Wrong amount format: ParseFloat: %v", err)
 	}
 
-	mutexDepositAndWithdraw.Lock()
-	defer mutexDepositAndWithdraw.Unlock()
+	depositAndWithdrawMutex.Lock()
+	defer depositAndWithdrawMutex.Unlock()
 
 	if userInfo.money == nil {
-		return status.WithCode(statusBadRequest, "You are not logged in: userInfo.money == nil")
+		return status.WithCode(http.StatusBadRequest, "You are not logged in: userInfo.money == nil")
 	}
 
 	switch operation {
@@ -39,7 +39,7 @@ func depositAndWithdraw(userInfo user, operation, currency, amount string) error
 		userInfo.money[currency] += amf
 	case "withdraw":
 		if res := userInfo.money[currency] - amf; res < 0 {
-			return status.WithCode(statusBadRequest, "You can't withdraw more money than you have")
+			return status.WithCode(http.StatusBadRequest, "You can't withdraw more money than you have")
 		}
 		userInfo.money[currency] -= amf
 	}
