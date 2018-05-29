@@ -21,7 +21,7 @@ type user struct {
 
 var (
 	mapEmailUid = make(map[string]userID)
-	mapUidUser  = make(map[userID]user)
+	mapUidUser  = make(map[userID]*user)
 	authMutex   sync.Mutex
 )
 
@@ -59,7 +59,7 @@ func register(email string, password string) error {
 	}
 
 	mapEmailUid[email] = uid
-	mapUidUser[uid] = user{email: email, password: cryptedPass, money: make(map[string]float64)}
+	mapUidUser[uid] = &user{email: email, password: cryptedPass, money: make(map[string]float64)}
 	return nil
 }
 
@@ -117,4 +117,17 @@ func login(email string, password string) (string, error) {
 
 	mapSidSession[sid] = session{id: uid}
 	return string(sid[:]), nil
+}
+
+/* End of the part */
+
+func getUserInfo(r *http.Request) (*user, error) {
+	cookie, err := r.Cookie("sid")
+	if err != nil {
+		return nil, status.WithCode(http.StatusBadRequest, "You are not logged in: %v", err)
+	}
+	var sid sessionID
+	copy(sid[:], []byte(cookie.Value))
+	uid := mapSidSession[sid]
+	return mapUidUser[uid.id], nil
 }

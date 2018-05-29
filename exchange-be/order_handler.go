@@ -51,7 +51,7 @@ func makeQueueItem(pair string, amount, price float64) {
 	oq.update(ord, ord.value, float64(time.Now().UnixNano()))
 }
 
-func limitOrder(userInfo user, pair, amount, price string) error {
+func limitOrder(userInfo *user, pair, amount, price string) error {
 	amountfl, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		return status.WithCode(http.StatusBadRequest, "Wrong amount format:ParseFloat: %v", err)
@@ -72,21 +72,21 @@ func limitOrder(userInfo user, pair, amount, price string) error {
 	return nil
 }
 
-func marketOrder(userInfo user, pair, amount string) error {
-	/* 
-	TODO(alexuserid):
-	convert amount to float64
-	get unique order id
-	execute
+func marketOrder(userInfo *user, pair, amount string) error {
+	/*
+		TODO(alexuserid):
+		convert amount to float64
+		get unique order id
+		execute
 	*/
 	return nil
 }
 
-func cancelOrder(userInfo user, pair, oid string) error {
+func cancelOrder(userInfo *user, pair, oid string) error {
 	/*
-	TODO(alexuserid):
-	convert oid to OrderID
-	remove order from that pair queue
+		TODO(alexuserid):
+		convert oid to OrderID
+		remove order from that pair queue
 	*/
 	return nil
 }

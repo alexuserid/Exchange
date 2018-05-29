@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
 	"github.com/starius/status"
 )
 
@@ -80,7 +81,7 @@ func tradeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" {
-		if err := json.NewEncoder(w).Encode(userInfo); err != nil {
+		if err := json.NewEncoder(w).Encode(*userInfo); err != nil {
 			log.Printf("trade: json.NewEncoder(w).Encode(userInfo)")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
