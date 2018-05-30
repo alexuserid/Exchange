@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/starius/status"
@@ -23,7 +22,6 @@ type order struct {
 var (
 	mapOidOrder = make(map[OrderID]order)
 	oq          = make(PriorityQueue, 1)
-	OidMutex    sync.Mutex
 )
 
 func getOid() (OrderID, error) {
@@ -60,8 +58,8 @@ func limitOrder(userInfo *user, pair, amount, price string) error {
 	if err != nil {
 		return status.WithCode(http.StatusBadRequest, "Wrong price fomat: ParseFloat: %v", err)
 	}
-	OidMutex.Lock()
-	defer OidMutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	oid, err := getOid()
 	if err != nil {

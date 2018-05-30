@@ -22,7 +22,7 @@ type user struct {
 var (
 	mapEmailUid = make(map[string]userID)
 	mapUidUser  = make(map[userID]*user)
-	authMutex   sync.Mutex
+	mutex       sync.Mutex
 )
 
 func newUid() (userID, error) {
@@ -47,8 +47,8 @@ func register(email string, password string) error {
 		return err
 	}
 
-	authMutex.Lock()
-	defer authMutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	if _, has := mapEmailUid[email]; has {
 		return status.WithCode(http.StatusConflict, "The email already exist")
@@ -92,8 +92,8 @@ func newSid() (sessionID, error) {
 }
 
 func login(email string, password string) (string, error) {
-	authMutex.Lock()
-	defer authMutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	emailAndPassCheck := func(email, pass string) (userID, bool) {
 		uid, has := mapEmailUid[email]
@@ -128,6 +128,10 @@ func getUserInfo(r *http.Request) (*user, error) {
 	}
 	var sid sessionID
 	copy(sid[:], []byte(cookie.Value))
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	uid := mapSidSession[sid]
 	return mapUidUser[uid.id], nil
 }
